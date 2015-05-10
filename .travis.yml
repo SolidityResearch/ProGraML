@@ -1,26 +1,32 @@
-# Copyright 2019 the ProGraML authors.
-#
-# Contact Chris Cummins <chrisc.101@gmail.com>.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-language: generic
+language: python
+python:
+  - "2.7"
+  - "3.3"
 
-services:
-  - docker
+before_install:
+  # Install Anaconda, which we will use to install scipy and other
+  # python dependencies:
+  - wget http://repo.continuum.io/miniconda/Miniconda-latest-Linux-x86_64.sh -O miniconda.sh
+  - chmod +x miniconda.sh
+  - ./miniconda.sh -b
+  - export PATH=/home/travis/miniconda/bin:$PATH
+  - conda update --yes conda
+  # Fix a crash with multiprocessing on Travis and are not specific to
+  # using Miniconda:
+  - sudo rm -rf /dev/shm
+  - sudo ln -s /run/shm /dev/shm
 
 install:
-  - docker pull chriscummins/phd_build:latest
-  - chmod -R 777 $TRAVIS_BUILD_DIR
+  - conda install --yes python=$TRAVIS_PYTHON_VERSION atlas numpy scipy matplotlib nose dateutil pandas statsmodels
+  # Coverage packages are on a binstar channel:
+  - conda install --yes -c dan_blanchard python-coveralls nose-cov
+  # Install support for coveralls.io:
+  - pip install coveralls coverage
+  - python setup.py install
 
 script:
-  - docker run -v$TRAVIS_BUILD_DIR:/phd chriscummins/phd_build:latest -c "./configure --noninteractive && ./tools/flaky_bazel.sh test --config=travis //deeplearning/ml4pl:run_id_test"
+  - coverage run --source=srtime setup.py test
+
+after_success:
+  # Create coverage report:
+  - coveralls
