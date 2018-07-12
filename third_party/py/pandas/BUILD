@@ -7,15 +7,15 @@ load("@requirements//:requirements.bzl", "requirement")
 
 package(default_visibility = ["//visibility:public"])
 
-licenses(["notice"])  # BSD
+licenses(["notice"]) # BSD
 
 py_library(
     name = "pandas",
-    srcs = ["//third_party/py:empty.py"],
+    srcs = ["pandas.py"],
     deps = [
         requirement("pandas"),
-        "//third_party/py/numpy",
+        requirement("numpy"),
         requirement("pytz"),
         requirement("python-dateutil"),
-    ],
+  ],
 )
