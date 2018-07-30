@@ -702,6 +702,9 @@ def TemporaryWorkingDir(prefix: str = "phd_") -> pathlib.Path:
   """
 <<<<<<< HEAD:labm8/py/fs.py
 <<<<<<< HEAD:labm8/py/fs.py
+<<<<<<< HEAD:labm8/py/fs.py
+=======
+>>>>>>> 7ab76a6e5... Catch error when changing to a temporary dir.:lib/labm8/fs.py
 =======
 >>>>>>> 7ab76a6e5... Catch error when changing to a temporary dir.:lib/labm8/fs.py
   # getcwd() will raise FileNotFoundError if the current workind directory
@@ -712,6 +715,7 @@ def TemporaryWorkingDir(prefix: str = "phd_") -> pathlib.Path:
   except FileNotFoundError:
     pass
   # Create a temporary directory, change to it, and return the path to the user.
+<<<<<<< HEAD:labm8/py/fs.py
 <<<<<<< HEAD:labm8/py/fs.py
   with tempfile.TemporaryDirectory(prefix=prefix) as d:
     os.chdir(d)
@@ -906,6 +910,14 @@ def TemporaryFileWithContents(contents: bytes, **kwargs):
     yield pathlib.Path(d)
   os.chdir(old_directory)
 >>>>>>> 583709888... Move TemporaryWorkingDir() into labm8.:lib/labm8/fs.py
+=======
+  with tempfile.TemporaryDirectory(prefix=prefix) as d:
+    os.chdir(d)
+    yield pathlib.Path(d)
+  # Rever to previous working directory, if there was one.
+  if old_directory:
+    os.chdir(old_directory)
+>>>>>>> 7ab76a6e5... Catch error when changing to a temporary dir.:lib/labm8/fs.py
 =======
   with tempfile.TemporaryDirectory(prefix=prefix) as d:
     os.chdir(d)
