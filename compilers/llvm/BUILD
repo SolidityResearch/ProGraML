@@ -1,65 +1,4 @@
 # A python wrapper around LLVM binaries.
-#
-# Copyright 2019 Chris Cummins <chrisc.101@gmail.com>.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#     http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-
-licenses(["notice"])  # Apache 2.0
-
-py_binary(
-    name = "build",
-    srcs = ["build.py"],
-    visibility = ["//visibility:public"],
-    deps = [
-        "//labm8/py:app",
-        "//labm8/py:fs",
-        "//labm8/py:prof",
-    ],
-)
-
-py_binary(
-    name = "clang",
-    srcs = ["clang.py"],
-    data = select({
-        "//:darwin": [
-            "@llvm_mac//:clang",
-        ],
-        "//conditions:default": [
-            "@llvm_linux//:clang",
-        ],
-    }),
-    visibility = ["//visibility:public"],
-    deps = [
-        ":llvm",
-        "//labm8/py:app",
-        "//labm8/py:bazelutil",
-        "//labm8/py:system",
-    ],
-)
-
-py_test(
-    name = "clang_test",
-    srcs = ["clang_test.py"],
-    data = ["//datasets/benchmarks:nqueens_src"],
-    deps = [
-        ":clang",
-        ":llvm",
-        "//labm8/py:app",
-        "//labm8/py:bazelutil",
-        "//labm8/py:fs",
-        "//labm8/py:test",
-    ],
-)
 
 py_binary(
     name = "clang_format",
@@ -75,9 +14,9 @@ py_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":llvm",
-        "//labm8/py:app",
-        "//labm8/py:bazelutil",
-        "//labm8/py:system",
+        "//lib/labm8:bazelutil",
+        "//lib/labm8:system",
+        "//third_party/py/absl",
     ],
 )
 
@@ -87,90 +26,8 @@ py_test(
     deps = [
         ":clang_format",
         ":llvm",
-        "//labm8/py:app",
-        "//labm8/py:test",
-    ],
-)
-
-py_binary(
-    name = "llvm_as",
-    srcs = ["llvm_as.py"],
-    data = select({
-        "//:darwin": [
-            "@llvm_mac//:llvm-as",
-        ],
-        "//conditions:default": [
-            "@llvm_linux//:llvm-as",
-        ],
-    }),
-    visibility = ["//visibility:public"],
-    deps = [
-        ":llvm",
-        "//labm8/py:app",
-        "//labm8/py:bazelutil",
-        "//labm8/py:system",
-    ],
-)
-
-py_binary(
-    name = "llvm_dis",
-    srcs = ["llvm_dis.py"],
-    data = select({
-        "//:darwin": [
-            "@llvm_mac//:llvm-dis",
-        ],
-        "//conditions:default": [
-            "@llvm_linux//:llvm-dis",
-        ],
-    }),
-    visibility = ["//visibility:public"],
-    deps = [
-        ":llvm",
-        "//labm8/py:app",
-        "//labm8/py:bazelutil",
-        "//labm8/py:system",
-    ],
-)
-
-py_test(
-    name = "llvm_dis_test",
-    srcs = ["llvm_dis_test.py"],
-    deps = [
-        ":llvm_dis",
-        "//labm8/py:app",
-        "//labm8/py:test",
-    ],
-)
-
-py_binary(
-    name = "llvm_link",
-    srcs = ["llvm_link.py"],
-    data = select({
-        "//:darwin": [
-            "@llvm_mac//:llvm-link",
-        ],
-        "//conditions:default": [
-            "@llvm_linux//:llvm-link",
-        ],
-    }),
-    visibility = ["//visibility:public"],
-    deps = [
-        ":llvm",
-        "//labm8/py:app",
-        "//labm8/py:bazelutil",
-        "//labm8/py:system",
-    ],
-)
-
-py_test(
-    name = "llvm_link_test",
-    srcs = ["llvm_link_test.py"],
-    deps = [
-        ":llvm",
-        ":llvm_link",
-        "//labm8/py:app",
-        "//labm8/py:fs",
-        "//labm8/py:test",
+        "//third_party/py/absl",
+        "//third_party/py/pytest",
     ],
 )
 
@@ -179,7 +36,7 @@ py_library(
     srcs = ["llvm.py"],
     visibility = ["//visibility:public"],
     deps = [
-        "//labm8/py:app",
+        "//third_party/py/absl",
     ],
 )
 
@@ -197,9 +54,9 @@ py_binary(
     visibility = ["//visibility:public"],
     deps = [
         ":llvm",
-        "//labm8/py:app",
-        "//labm8/py:bazelutil",
-        "//labm8/py:system",
+        "//lib/labm8:bazelutil",
+        "//lib/labm8:system",
+        "//third_party/py/absl",
     ],
 )
 
@@ -209,32 +66,7 @@ py_test(
     deps = [
         ":llvm",
         ":opt",
-        "//labm8/py:app",
-        "//labm8/py:test",
-    ],
-)
-
-py_library(
-    name = "opt_util",
-    srcs = ["opt_util.py"],
-    visibility = ["//visibility:public"],
-    deps = [
-        ":llvm",
-        ":llvm_as",
-        ":opt",
-        "//labm8/py:app",
-        "//labm8/py:humanize",
-    ],
-)
-
-py_test(
-    name = "opt_util_test",
-    srcs = ["opt_util_test.py"],
-    deps = [
-        ":llvm",
-        ":opt",
-        ":opt_util",
-        "//labm8/py:app",
-        "//labm8/py:test",
+        "//third_party/py/absl",
+        "//third_party/py/pytest",
     ],
 )
