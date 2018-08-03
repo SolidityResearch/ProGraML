@@ -8,11 +8,8 @@ licenses(["notice"])  # BSD
 
 py_library(
     name = "matplotlib",
-    srcs = ["//third_party/py:empty.py"],
+    srcs = ["matplotlib.py"],
     deps = [
         requirement("matplotlib"),
-        "//third_party/py/pyparsing",  # Implicit dependency.
-        requirement("cycler"),  # Implicit dependency.
-        requirement("kiwisolver"),  # Implicit dependency.
     ],
 )

@@ -8,13 +8,8 @@ licenses(["notice"])  # BSD
 
 py_library(
     name = "jupyter",
-    srcs = ["//third_party/py:empty.py"],
+    srcs = ["jupyter.py"],
     deps = [
         requirement("jupyter-client"),
-        requirement("jupyter_http_over_ws"),
-        requirement("notebook"),
-        requirement("nbformat"),
-        requirement("prometheus_client"),
-        "//third_party/py/jinja2",
     ],
 )
