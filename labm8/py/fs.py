@@ -673,6 +673,7 @@ def chdir(directory: typing.Union[str, pathlib.Path]) -> pathlib.Path:
 
 
 @contextlib.contextmanager
+<<<<<<< HEAD:labm8/py/fs.py
 def TemporaryWorkingDir(prefix: str = "phd_") -> pathlib.Path:
 =======
 
@@ -688,6 +689,9 @@ def TemporaryWorkingDir(prefix: str = 'phd_') -> pathlib.Path:
 =======
 def TemporaryWorkingDir(prefix: str = "phd_") -> pathlib.Path:
 >>>>>>> 4242aed2a... Automated code format.
+=======
+def TemporaryWorkingDir(prefix: str = 'phd_') -> pathlib.Path:
+>>>>>>> 809f924cd... Set a default working directory prefix.:lib/labm8/fs.py
   """A context manager which provides a temporary working directory.
 
   This creates an empty temporary directory, and changes the current working
