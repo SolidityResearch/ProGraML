@@ -10,6 +10,7 @@ py_library(
     name = "bokeh",
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
     srcs = ["//third_party/py:empty.py"],
 =======
     srcs = ["bokeh.py"],
@@ -17,6 +18,9 @@ py_library(
 =======
     srcs = ["//third_party/py:empty.py"],
 >>>>>>> 10d0bba21... Remove the empty python library files.
+=======
+    srcs = ["bokeh.py"],
+>>>>>>> 31e381197... Add new third party python packages.
     deps = [
         requirement("bokeh"),
         requirement("pandas-bokeh"),
