@@ -8,10 +8,8 @@ licenses(["notice"])  # Apache
 
 py_library(
     name = "graph_nets",
-    srcs = ["//third_party/py:empty.py"],
+    srcs = ["graph_nets.py"],
     deps = [
         requirement("graph_nets"),
-        "//third_party/py/sonnet",
-        "//third_party/py/tensorflow",
     ],
 )
