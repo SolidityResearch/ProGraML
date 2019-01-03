@@ -776,6 +776,7 @@ py_library(
 
 py_library(
     name = "test",
+<<<<<<< HEAD:labm8/py/BUILD
     testonly = 1,
     srcs = ["test.py"],
     visibility = ["//visibility:public"],
@@ -784,6 +785,16 @@ py_library(
         "//:conftest",
         "//third_party/py/pytest",
     ],
+=======
+    srcs = ["test.py"],
+    visibility = ["//visibility:public"],
+    deps = [
+        "//third_party/py/absl",
+        "//third_party/py/pytest",
+        "//:conftest",
+    ],
+    testonly = 1,
+>>>>>>> bc95676dd... Add a project-wide pytest entry point and config.:labm8/BUILD
 )
 
 py_test(
