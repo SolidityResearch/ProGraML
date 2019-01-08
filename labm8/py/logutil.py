@@ -101,6 +101,7 @@ def ConertAbslLogToProtos(
         logging_pb2.LogRecord(
           level=ABSL_LEVEL_TO_LOG_RECORD_LEVEL[starting_match.group("lvl")],
           date_utc_epoch_ms=labdate.MillisecondsTimestamp(
+<<<<<<< HEAD:labm8/py/logutil.py
             DatetimeFromAbslTimestamp(
               starting_match.group("timestamp"), year=year,
             ),
@@ -115,6 +116,17 @@ def ConertAbslLogToProtos(
       )
 
   for line in logs.split("\n"):
+=======
+              DatetimeFromAbslTimestamp(
+                  starting_match.group('timestamp'), year=year)),
+          thread_id=int(starting_match.group('thread_id')),
+          file_name=starting_match.group('filename'),
+          line_number=int(starting_match.group('lineno')),
+          message='\n'.join(
+              [starting_match.group('contents')] + lines_buffer).rstrip()))
+
+  for line in logs.split('\n'):
+>>>>>>> 620197b9a... Fix year on logutil.:labm8/logutil.py
     m = ABSL_LOGGING_LINE_RE.match(line)
     if m:
       ConvertOne()
