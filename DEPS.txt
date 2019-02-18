@@ -18,13 +18,12 @@ macos: brew install sdl2
 macos: brew install wget
 macos: brew install ffmpeg
 linux: # Install bazel:
-linux: curl -L -o /tmp/bazel.sh https://github.com/bazelbuild/bazel/releases/download/1.2.0/bazel-1.2.0-installer-linux-x86_64.sh
+linux: curl -L -o /tmp/bazel.sh https://github.com/bazelbuild/bazel/releases/download/0.14.1/bazel-0.14.1-installer-linux-x86_64.sh
 linux: sudo bash /tmp/bazel.sh && rm /tmp/bazel.sh
 linux: # Update package index:
 linux: sudo apt-get update
 linux: sudo apt install -y --no-install-recommends ca-certificates
 linux: sudo apt install -y --no-install-recommends curl
-linux: sudo apt install -y --no-install-recommends wget
 linux: sudo apt install -y --no-install-recommends g++
 linux: sudo apt install -y --no-install-recommends git
 linux: sudo apt install -y --no-install-recommends ocl-icd-opencl-dev
@@ -58,7 +57,3 @@ linux: sudo apt install -y --no-install-recommends timidity
 linux: sudo apt install -y --no-install-recommends libwildmidi-dev
 linux: sudo apt install -y --no-install-recommends libboost-all-dev
 linux: sudo apt install -y --no-install-recommends libsdl2-dev
-linux: # Required by bazel workspace rules:
-linux: sudo apt install -y --no-install-recommends patch
-# Required for building pyopencl:
-all: python -m pip install 'pybind11==2.4.3'
