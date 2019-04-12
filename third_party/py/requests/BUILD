@@ -8,12 +8,9 @@ licenses(["notice"])  # BSD
 
 py_library(
     name = "requests",
-    srcs = ["//third_party/py:empty.py"],
+    srcs = ["requests.py"],
     deps = [
         requirement("requests"),
-        requirement("chardet"),  # Implicit dependency.
-        requirement("certifi"),  # Implicit dependency.
-        requirement("idna"),  # Implicit dependency.
-        "//third_party/py/urllib3",  # Implicit dependency.
+        requirement("idna"),
     ],
 )
