@@ -8,7 +8,7 @@ licenses(["notice"])  # MIT
 
 py_library(
     name = "urllib3",
-    srcs = ["//third_party/py:empty.py"],
+    srcs = ["urllib3.py"],
     deps = [
         requirement("urllib3"),
     ],

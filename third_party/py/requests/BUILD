@@ -12,5 +12,6 @@ py_library(
     deps = [
         requirement("requests"),
         requirement("idna"),
+        "//third_party/py/urllib3",
     ],
 )
