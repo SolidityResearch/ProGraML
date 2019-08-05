@@ -1,4 +1,8 @@
+<<<<<<< HEAD:deeplearning/ml4pl/testing/data/bytecode_regression_tests/BUILD
 # Bytecode files regression tests of graph construction.
+=======
+# Test data for //labm8/cpp.
+>>>>>>> bcb139c36... Fix //phd to //labm8 path.:labm8/cpp/test/BUILD
 #
 # Copyright 2019 the ProGraML authors.
 #
