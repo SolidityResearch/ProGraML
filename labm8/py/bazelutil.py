@@ -153,6 +153,7 @@ class Workspace(object):
       timeout_seconds: The number of seconds before failing.
       subprocess_kwargs: Additional arguments to pass to Popen().
     """
+<<<<<<< HEAD:labm8/py/bazelutil.py
     return self.Bazel(
       "query", args, timeout_seconds=timeout_seconds, **subprocess_kwargs
     )
@@ -173,6 +174,18 @@ class Workspace(object):
       "--noshow_progress",
     ] + args
     app.Log(2, "$ %s", " ".join(cmd))
+=======
+    return self.Bazel('query',
+                      args,
+                      timeout_seconds=timeout_seconds,
+                      **subprocess_kwargs)
+
+  def Bazel(self,
+            command: str,
+            args: typing.List[str],
+            timeout_seconds: int = 360,
+            **subprocess_kwargs):
+>>>>>>> 6d5f13a15... Resolve dependencies for each target in turn.:labm8/bazelutil.py
     with fs.chdir(self.workspace_root):
       return subprocess.Popen(cmd, **subprocess_kwargs)
 
@@ -222,18 +235,26 @@ class Workspace(object):
     """
     # First run through bazel query to expand globs.
     bazel = self.BazelQuery([target], stdout=subprocess.PIPE)
+<<<<<<< HEAD:labm8/py/bazelutil.py
     grep = subprocess.Popen(
       ["grep", "^/"],
       stdout=subprocess.PIPE,
       stdin=bazel.stdout,
       universal_newlines=True,
     )
+=======
+    grep = subprocess.Popen(['grep', '^/'],
+                            stdout=subprocess.PIPE,
+                            stdin=bazel.stdout,
+                            universal_newlines=True)
+>>>>>>> 6d5f13a15... Resolve dependencies for each target in turn.:labm8/bazelutil.py
 
     stdout, _ = grep.communicate()
     if bazel.returncode:
       raise OSError("bazel query failed")
     if grep.returncode:
       raise OSError("grep of bazel query output failed")
+<<<<<<< HEAD:labm8/py/bazelutil.py
     targets = stdout.rstrip().split("\n")
 
     # Now get the transitive dependencies of each target.
@@ -254,6 +275,18 @@ class Workspace(object):
         stdin=bazel.stdout,
         universal_newlines=True,
       )
+=======
+    targets = stdout.rstrip().split('\n')
+
+    # Now get the transitive dependencies of each target.
+    targets = [target for target in targets if target not in excluded_targets]
+    for target in targets:
+      bazel = self.BazelQuery([f'deps({target})'], stdout=subprocess.PIPE)
+      grep = subprocess.Popen(['grep', '^/'],
+                              stdout=subprocess.PIPE,
+                              stdin=bazel.stdout,
+                              universal_newlines=True)
+>>>>>>> 6d5f13a15... Resolve dependencies for each target in turn.:labm8/bazelutil.py
 
       stdout, _ = grep.communicate()
       if bazel.returncode:
@@ -261,12 +294,19 @@ class Workspace(object):
       if grep.returncode:
         raise OSError("grep of bazel query output failed")
 
+<<<<<<< HEAD:labm8/py/bazelutil.py
       deps = stdout.rstrip().split("\n")
       all_targets += [
         target for target in deps if target not in excluded_targets
       ]
 
     paths = [self.MaybeTargetToPath(target) for target in all_targets]
+=======
+      deps = stdout.rstrip().split('\n')
+      targets += [target for target in deps if target not in excluded_targets]
+
+    paths = [self.MaybeTargetToPath(target) for target in targets]
+>>>>>>> 6d5f13a15... Resolve dependencies for each target in turn.:labm8/bazelutil.py
     return [path for path in paths if path]
 
   def GetBuildFiles(self, target: str) -> typing.List[pathlib.Path]:
