@@ -14,6 +14,57 @@
 # See the License for the specific language governing permissions and
 # limitations under the License.
 
+<<<<<<< HEAD:labm8/py/BUILD
+=======
+load("//tools/bzl:exports.bzl", "exports_pip", "exports_repo")
+
+licenses(["notice"])  # Apache 2.0
+
+exports_files([
+    "LICENSE",
+    "README.md",
+    "CNAME",
+])
+
+exports_repo(
+    name = "export",
+    extra_files = [
+        "labm8/labm8.jpg",
+    ],
+    github_repo = "labm8",
+    move_file_mapping = {
+        "labm8/README.md": "README.md",
+        "labm8/LICENSE": "LICENSE",
+        "labm8/travis.yml": ".travis.yml",
+    },
+    targets = ["//labm8:all"],
+)
+
+exports_pip(
+    name = "deploy",
+    package_name = "labm8",
+    classifiers = [
+        "Development Status :: 4 - Beta",
+        "Environment :: Console",
+        "Intended Audience :: Developers",
+        "License :: OSI Approved :: Apache Software License",
+        "Programming Language :: Python :: 3.6",
+        "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+    ],
+    description = "Utility libraries for doing science",
+    keywords = [
+        "utility",
+        "library",
+        "bazel",
+        "protobuf",
+    ],
+    license = "Apache License, Version 2.0",
+    long_description_file = "//labm8:README.md",
+    package_root = "//labm8",
+)
+
+>>>>>>> 90da2ebd6... Export logo file.:labm8/BUILD
 py_library(
     name = "app",
     srcs = ["app.py"],
