@@ -1,12 +1,12 @@
-# Core C++ libraries.
+# Core C++ libraries for the phd repo.
 #
-# Copyright 2014-2019 Chris Cummins <chrisc.101@gmail.com>.
+# Copyright 2019 Chris Cummins <chrisc.101@gmail.com>.
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
 # You may obtain a copy of the License at
 #
-#    http://www.apache.org/licenses/LICENSE-2.0
+#     http://www.apache.org/licenses/LICENSE-2.0
 #
 # Unless required by applicable law or agreed to in writing, software
 # distributed under the License is distributed on an "AS IS" BASIS,
@@ -48,7 +48,7 @@ cc_library(
 cc_test(
     name = "bazelutil_test",
     srcs = ["bazelutil_test.cc"],
-    data = ["//labm8/cpp/test:data_file"],
+    data = ["//phd/test:data_file"],
     deps = [
         ":bazelutil",
         ":test",
@@ -173,7 +173,7 @@ cc_test(
     deps = [
         ":pbutil",
         ":test",
-        "//labm8/cpp/test:protos_pb_cc",
+        "//phd/test:protos_pb_cc",
     ],
 )
 
