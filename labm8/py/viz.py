@@ -101,9 +101,15 @@ def RotateYLabels(rotation: int = 90, ax: axes.Axes = None):
 
 
 def FormatXLabelsAsTimestamps(
+<<<<<<< HEAD:labm8/py/viz.py
   format="%H:%M:%S",
   convert_to_seconds=lambda t: t / 1000,
   ax: axes.Axes = None,
+=======
+    format='%H:%M:%S',
+    convert_to_seconds=lambda t: t / 1000,
+    ax: axes.Axes = None,
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/viz.py
 ) -> None:
   """Format the X labels
 
@@ -114,12 +120,17 @@ def FormatXLabelsAsTimestamps(
   """
   ax = ax or plt.gca()
   formatter = matplotlib.ticker.FuncFormatter(
+<<<<<<< HEAD:labm8/py/viz.py
     lambda t, _: time.strftime(format, time.gmtime(convert_to_seconds(t))),
+=======
+      lambda t, _: time.strftime(format, time.gmtime(convert_to_seconds(t))),
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/viz.py
   )
   ax.xaxis.set_major_formatter(formatter)
 
 
 def Distplot(
+<<<<<<< HEAD:labm8/py/viz.py
   x=None,
   hue=None,
   data=None,
@@ -131,6 +142,19 @@ def Distplot(
   norm_hist=False,
   hue_order=None,
   ax=None,
+=======
+    x=None,
+    hue=None,
+    data=None,
+    log_x: bool = False,
+    log1p_x: bool = False,
+    kde=False,
+    bins=None,
+    nbins: typing.Optional[int] = None,
+    norm_hist=False,
+    hue_order=None,
+    ax=None,
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/viz.py
 ):
   """An extension of seaborn distribution plots for grouped data.
 
@@ -224,18 +248,36 @@ def Distplot(
 
   if hue is None:
     sns.distplot(
+<<<<<<< HEAD:labm8/py/viz.py
       values_to_plot, kde=kde, bins=bins, label=x, norm_hist=norm_hist, ax=ax,
+=======
+        values_to_plot,
+        kde=kde,
+        bins=bins,
+        label=x,
+        norm_hist=norm_hist,
+        ax=ax,
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/viz.py
     )
   else:
     hue_order = hue_order or sorted(set(data[hue]))
     for h in hue_order:
       sns.distplot(
+<<<<<<< HEAD:labm8/py/viz.py
         values_to_plot[data[hue] == h],
         kde=kde,
         bins=bins,
         label=h,
         norm_hist=norm_hist,
         ax=ax,
+=======
+          values_to_plot[data[hue] == h],
+          kde=kde,
+          bins=bins,
+          label=h,
+          norm_hist=norm_hist,
+          ax=ax,
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/viz.py
       )
     plt.legend()
 
@@ -245,6 +287,7 @@ def Distplot(
 def SummarizeFloats(floats: typing.Iterable[float], nplaces: int = 2) -> str:
   """Summarize a sequence of floats."""
   arr = np.array(list(floats), dtype=np.float32)
+<<<<<<< HEAD:labm8/py/viz.py
   percs = " ".join(
     [f"{p}%={np.percentile(arr, p):.{nplaces}f}" for p in [0, 50, 95, 99, 100]]
   )
@@ -252,11 +295,20 @@ def SummarizeFloats(floats: typing.Iterable[float], nplaces: int = 2) -> str:
     f"n={len(arr)}, mean={arr.mean():.{nplaces}f}, stdev={arr.std():.{nplaces}f}, "
     f"percentiles=[{percs}]"
   )
+=======
+  percs = ' '.join([
+      f'{p}%={np.percentile(arr, p):.{nplaces}f}' for p in [0, 50, 95, 99, 100]
+  ])
+  return (
+      f'n={len(arr)}, mean={arr.mean():.{nplaces}f}, stdev={arr.std():.{nplaces}f}, '
+      f'percentiles=[{percs}]')
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/viz.py
 
 
 def SummarizeInts(ints: typing.Iterable[int]) -> str:
   """Summarize a sequence of ints."""
   arr = np.array(list(ints), dtype=np.int32)
+<<<<<<< HEAD:labm8/py/viz.py
   percs = " ".join(
     [f"{p}%={np.percentile(arr, p):.0f}" for p in [0, 50, 95, 99, 100]],
   )
@@ -280,3 +332,9 @@ def PlotDot(dot: str) -> None:
     except subprocess.CalledProcessError as e:
       raise ValueError(f"Failed to process dotgraph: {dot}")
     display.display(display.Image(filename=f"{d}/dot.png"))
+=======
+  percs = ' '.join(
+      [f'{p}%={np.percentile(arr, p):.0f}' for p in [0, 50, 95, 99, 100]],)
+  return (f'n={len(arr)}, mean={arr.mean():.2f}, stdev={arr.std():.2f}, '
+          f'percentiles=[{percs}]')
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/viz.py

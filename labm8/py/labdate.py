@@ -41,9 +41,14 @@ def GetUtcMillisecondsNow() -> datetime.datetime:
   return d.replace(microsecond=int(d.microsecond / 1000) * 1000)
 
 
+<<<<<<< HEAD:labm8/py/labdate.py
 def MillisecondsTimestamp(
   date: typing.Optional[datetime.datetime] = None,
 ) -> int:
+=======
+def MillisecondsTimestamp(date: typing.Optional[datetime.datetime] = None,
+                         ) -> int:
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/labdate.py
   """Get the millisecond timestamp of a date.
 
   Args:
@@ -61,6 +66,7 @@ def MillisecondsTimestamp(
   return int(date.strftime("%s%f")[:-3])
 
 
+<<<<<<< HEAD:labm8/py/labdate.py
 def DatetimeFromMillisecondsTimestamp(
 <<<<<<< HEAD:labm8/py/labdate.py
   timestamp: int = None,
@@ -68,6 +74,10 @@ def DatetimeFromMillisecondsTimestamp(
 =======
     timestamp: int = None) -> datetime.datetime:
 >>>>>>> 303e215d5... Add default arg to labdate function.:lib/labm8/labdate.py
+=======
+def DatetimeFromMillisecondsTimestamp(timestamp: int = None,
+                                     ) -> datetime.datetime:
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/labdate.py
   """Get the date of a millisecond timestamp.
 
   Args:

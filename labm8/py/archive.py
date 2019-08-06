@@ -29,9 +29,15 @@ class Archive(object):
   """
 
   def __init__(
+<<<<<<< HEAD:labm8/py/archive.py
     self,
     path: typing.Union[str, pathlib.Path],
     assume_filename: typing.Optional[typing.Union[str, pathlib.Path]] = None,
+=======
+      self,
+      path: typing.Union[str, pathlib.Path],
+      assume_filename: typing.Optional[typing.Union[str, pathlib.Path]] = None,
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/archive.py
   ):
     """Create an archive.
 
@@ -58,11 +64,16 @@ class Archive(object):
 
     if not suffixes:
       raise UnsupportedArchiveFormat(
+<<<<<<< HEAD:labm8/py/archive.py
         f"Archive '{path_to_determine_type.name}' has no extension",
       )
+=======
+          f"Archive '{path_to_determine_type.name}' has no extension",)
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/archive.py
 
     if suffixes[-1] == ".zip":
       self._open_function = zipfile.ZipFile
+<<<<<<< HEAD:labm8/py/archive.py
     elif suffixes[-2:] == [".tar", ".bz2"]:
       self._open_function = lambda f: tarfile.open(f, "r:bz2")
       # TODO(cec): Add support for .tar, and .tar.gz.
@@ -71,6 +82,15 @@ class Archive(object):
         f"Unsupported file extension '{suffixes[-1]}' for archive "
         f"'{path_to_determine_type.name}'",
       )
+=======
+    elif suffixes[-2:] == ['.tar', '.bz2']:
+      self._open_function = lambda f: tarfile.open(f, 'r:bz2')
+      # TODO(cec): Add support for .tar, and .tar.gz.
+    else:
+      raise UnsupportedArchiveFormat(
+          f"Unsupported file extension '{suffixes[-1]}' for archive "
+          f"'{path_to_determine_type.name}'",)
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/archive.py
 
     # Set in __enter__().
     self._uncompressed_path: typing.Optional[pathlib.Path] = None
