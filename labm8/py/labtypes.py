@@ -61,9 +61,12 @@ def is_seq(obj):
 =======
   return (not is_str(obj) and not is_dict(obj) and
           (hasattr(obj, '__getitem__') or hasattr(obj, '__iter__')))
+<<<<<<< HEAD:labm8/py/labtypes.py
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/labtypes.py
 =======
 >>>>>>> 4242aed2a... Automated code format.
+=======
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/labtypes.py
 
 
 def flatten(lists):
@@ -143,11 +146,14 @@ def get_class_that_defined_method(meth):
 =======
           inspect.getmodule(meth),
           meth.__qualname__.split('.<locals>', 1)[0].rsplit('.', 1)[0],
+<<<<<<< HEAD:labm8/py/labtypes.py
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/labtypes.py
 =======
         inspect.getmodule(meth),
         meth.__qualname__.split(".<locals>", 1)[0].rsplit(".", 1)[0],
 >>>>>>> 4242aed2a... Automated code format.
+=======
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/labtypes.py
       )
       if isinstance(cls, type):
         return cls
@@ -186,12 +192,15 @@ class ReprComparable(object):
     return str(self) >= str(other)
 
 
+<<<<<<< HEAD:labm8/py/labtypes.py
 <<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/labtypes.py
 def PairwiseIterator(
   iterable: typing.Iterator[typing.Any],
 ) -> typing.Iterator[typing.Tuple[typing.Any, typing.Any]]:
 =======
+=======
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/labtypes.py
 def PairwiseIterator(iterable: typing.Iterator[typing.Any],
                     ) -> typing.Iterator[typing.Tuple[typing.Any, typing.Any]]:
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/labtypes.py
@@ -221,6 +230,7 @@ def PairwiseIterator(
 
 
 def SetDiff(
+<<<<<<< HEAD:labm8/py/labtypes.py
 <<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/labtypes.py
   a: typing.Iterator[typing.Any], b: typing.Iterator[typing.Any],
@@ -231,6 +241,10 @@ def SetDiff(
 =======
   a: typing.Iterator[typing.Any], b: typing.Iterator[typing.Any],
 >>>>>>> 4242aed2a... Automated code format.
+=======
+    a: typing.Iterator[typing.Any],
+    b: typing.Iterator[typing.Any],
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/labtypes.py
 ) -> typing.List[typing.Any]:
   """Return the set difference between two sequences.
 
@@ -265,6 +279,7 @@ def AllSubclassesOfClass(cls: typing.Type) -> typing.Set[typing.Type]:
     A set of class types.
   """
   return set(cls.__subclasses__()).union(
+<<<<<<< HEAD:labm8/py/labtypes.py
 <<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/labtypes.py
 <<<<<<< HEAD:labm8/py/labtypes.py
@@ -323,3 +338,6 @@ def DeleteKeys(d, keys):
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/labtypes.py
 =======
 >>>>>>> 4f357866c... Add two utility functions.:labm8/labtypes.py
+=======
+      [s for c in cls.__subclasses__() for s in AllSubclassesOfClass(c)],)
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/labtypes.py

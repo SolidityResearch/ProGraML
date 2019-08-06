@@ -218,6 +218,7 @@ def DecimalPrefix(
     and the unit.
   """
   return _Prefix(
+<<<<<<< HEAD:labm8/py/humanize.py
     quantity,
     unit,
     precision,
@@ -229,6 +230,18 @@ def DecimalPrefix(
 
 
 def BinaryPrefix(quantity, unit, precision=1, separator=" "):
+=======
+      quantity,
+      unit,
+      precision,
+      DecimalScale,
+      min_scale=min_scale,
+      max_scale=max_scale,
+  )
+
+
+def BinaryPrefix(quantity, unit, precision=1):
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/humanize.py
   """Formats an integer and a unit into a string, using binary prefixes.
 
   The unit will be prefixed with an appropriate multiplier such that
@@ -281,8 +294,14 @@ def _Prefix(quantity, unit, precision, separator, scale_callable, **args):
   if scaled_unit:
     separator = " "
 
+<<<<<<< HEAD:labm8/py/humanize.py
   print_pattern = "%%.%df%%s%%s" % max(
     0, (precision - int(math.log(abs(scaled_quantity), 10)) - 1),
+=======
+  print_pattern = '%%.%df%%s%%s' % max(
+      0,
+      (precision - int(math.log(abs(scaled_quantity), 10)) - 1),
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/humanize.py
   )
 
   return print_pattern % (scaled_quantity, separator, scaled_unit)
@@ -290,6 +309,7 @@ def _Prefix(quantity, unit, precision, separator, scale_callable, **args):
 
 # Prefixes and corresponding min_scale and max_scale for decimal formating.
 DECIMAL_PREFIXES = (
+<<<<<<< HEAD:labm8/py/humanize.py
   "y",
   "z",
   "a",
@@ -307,6 +327,25 @@ DECIMAL_PREFIXES = (
   "E",
   "Z",
   "Y",
+=======
+    'y',
+    'z',
+    'a',
+    'f',
+    'p',
+    'n',
+    u'µ',
+    'm',
+    '',
+    'k',
+    'M',
+    'G',
+    'T',
+    'P',
+    'E',
+    'Z',
+    'Y',
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/humanize.py
 )
 DECIMAL_MIN_SCALE = -8
 DECIMAL_MAX_SCALE = 8
@@ -352,7 +391,14 @@ def BinaryScale(quantity, unit):
     units (string).
   """
   return _Scale(
+<<<<<<< HEAD:labm8/py/humanize.py
     quantity, unit, 1024, ("Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi"),
+=======
+      quantity,
+      unit,
+      1024,
+      ('Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi', 'Yi'),
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/humanize.py
   )
 
 
@@ -572,7 +618,7 @@ def NaturalSortKey(data):
       segments[i] = _StrComparableInt(int(value))
     else:
       segments[i] = _StrComparableInt(value)
-  print("SEGMENTS", segments)
+  print('SEGMENTS', segments)
   return segments
 
 

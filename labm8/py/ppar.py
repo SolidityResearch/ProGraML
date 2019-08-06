@@ -47,7 +47,7 @@ class MapWorkerError(EnvironmentError):
     self._returncode = returncode
 
   def __repr__(self) -> str:
-    return f"Command exited with code {self.returncode}"
+    return f'Command exited with code {self.returncode}'
 
   @property
   def returncode(self) -> int:
@@ -66,7 +66,14 @@ class _MapWorker(object):
   """
 
   def __init__(
+<<<<<<< HEAD:labm8/py/ppar.py
     self, id: int, cmd: typing.List[str], input_proto: pbutil.ProtocolBuffer,
+=======
+      self,
+      id: int,
+      cmd: typing.List[str],
+      input_proto: pbutil.ProtocolBuffer,
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/ppar.py
   ):
     """Create a map worker.
 
@@ -99,7 +106,13 @@ class _MapWorker(object):
 
     # Run the C++ worker process, capturing it's output.
     process = subprocess.Popen(
+<<<<<<< HEAD:labm8/py/ppar.py
       self._cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+=======
+        self._cmd,
+        stdin=subprocess.PIPE,
+        stdout=subprocess.PIPE,
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/ppar.py
     )
     # Send the input proto to the C++ worker process.
     # TODO: Add timeout.
@@ -112,7 +125,13 @@ class _MapWorker(object):
       self._output_proto_string = stdout
 
   def SetProtos(
+<<<<<<< HEAD:labm8/py/ppar.py
     self, input_proto: pbutil.ProtocolBuffer, output_proto_class: typing.Type,
+=======
+      self,
+      input_proto: pbutil.ProtocolBuffer,
+      output_proto_class: typing.Type,
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/ppar.py
   ) -> None:
     """Set the input protocol buffer, and decode the output protocol buffer.
 
@@ -133,8 +152,12 @@ class _MapWorker(object):
       # unrecognized fields, conflicting field type/tags) are silently ignored
       # here.
       self._output_proto = output_proto_class.FromString(
+<<<<<<< HEAD:labm8/py/ppar.py
         self._output_proto_string,
       )
+=======
+          self._output_proto_string,)
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/ppar.py
     # No need to hand onto the string message any more.
     del self._output_proto_string
 
@@ -180,12 +203,21 @@ def _RunNativeProtoProcessingWorker(map_worker: _MapWorker) -> _MapWorker:
 
 
 def MapNativeProtoProcessingBinary(
+<<<<<<< HEAD:labm8/py/ppar.py
   binary_data_path: str,
   input_protos: typing.List[pbutil.ProtocolBuffer],
   output_proto_class: typing.Type,
   binary_args: typing.Optional[typing.List[str]] = None,
   pool: typing.Optional[multiprocessing.Pool] = None,
   num_processes: typing.Optional[int] = None,
+=======
+    binary_data_path: str,
+    input_protos: typing.List[pbutil.ProtocolBuffer],
+    output_proto_class: typing.Type,
+    binary_args: typing.Optional[typing.List[str]] = None,
+    pool: typing.Optional[multiprocessing.Pool] = None,
+    num_processes: typing.Optional[int] = None,
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/ppar.py
 ) -> typing.Iterator[_MapWorker]:
   """Run a protocol buffer processing binary over a set of inputs.
 
@@ -218,18 +250,31 @@ def MapNativeProtoProcessingBinary(
   )
 
   for map_worker in pool.imap_unordered(
+<<<<<<< HEAD:labm8/py/ppar.py
     _RunNativeProtoProcessingWorker, map_worker_iterator,
+=======
+      _RunNativeProtoProcessingWorker,
+      map_worker_iterator,
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/ppar.py
   ):
     map_worker.SetProtos(input_protos[map_worker.id], output_proto_class)
     yield map_worker
 
 
 def MapNativeProcessingBinaries(
+<<<<<<< HEAD:labm8/py/ppar.py
   binaries: typing.List[str],
   input_protos: typing.List[pbutil.ProtocolBuffer],
   output_proto_classes: typing.List[typing.Type],
   pool: typing.Optional[multiprocessing.Pool] = None,
   num_processes: typing.Optional[int] = None,
+=======
+    binaries: typing.List[str],
+    input_protos: typing.List[pbutil.ProtocolBuffer],
+    output_proto_classes: typing.List[typing.Type],
+    pool: typing.Optional[multiprocessing.Pool] = None,
+    num_processes: typing.Optional[int] = None,
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/ppar.py
 ) -> typing.Iterator[_MapWorker]:
   """Run a protocol buffer processing binary over a set of inputs.
 
@@ -258,6 +303,7 @@ def MapNativeProcessingBinaries(
   # Create the multiprocessing pool to use, if not provided.
   pool = pool or multiprocessing.Pool(processes=num_processes)
 
+<<<<<<< HEAD:labm8/py/ppar.py
   map_worker_iterator = (
     _MapWorker(id, cmd, input_proto,)
     for id, (cmd, input_proto,) in enumerate(zip(cmds, input_protos))
@@ -268,6 +314,24 @@ def MapNativeProcessingBinaries(
   ):
     map_worker.SetProtos(
       input_protos[map_worker.id], output_proto_classes[map_worker.id],
+=======
+  map_worker_iterator = (_MapWorker(
+      id,
+      cmd,
+      input_proto,
+  ) for id, (
+      cmd,
+      input_proto,
+  ) in enumerate(zip(cmds, input_protos)))
+
+  for map_worker in pool.imap_unordered(
+      _RunNativeProtoProcessingWorker,
+      map_worker_iterator,
+  ):
+    map_worker.SetProtos(
+        input_protos[map_worker.id],
+        output_proto_classes[map_worker.id],
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/ppar.py
     )
     yield map_worker
 
@@ -316,8 +380,13 @@ def MapDatabaseRowBatchProcessor(
 >>>>>>> 06406b3a3... Work in progress on db map.:labm8/ppar.py
 =======
     start_at: int = 0,
+<<<<<<< HEAD:labm8/py/ppar.py
     pool: typing.Optional[multiprocessing.Pool] = None) -> None:
 >>>>>>> 09956bade... Parallel execution fixes.:labm8/ppar.py
+=======
+    pool: typing.Optional[multiprocessing.Pool] = None,
+) -> None:
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/ppar.py
   """Execute a database row-processesing function in parallel.
 
   Use this function to orchestrate the parallel execution of a function that

@@ -38,12 +38,15 @@ class Archive(object):
       self,
       path: typing.Union[str, pathlib.Path],
       assume_filename: typing.Optional[typing.Union[str, pathlib.Path]] = None,
+<<<<<<< HEAD:labm8/py/archive.py
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/archive.py
 =======
     self,
     path: typing.Union[str, pathlib.Path],
     assume_filename: typing.Optional[typing.Union[str, pathlib.Path]] = None,
 >>>>>>> 4242aed2a... Automated code format.
+=======
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/archive.py
   ):
     """Create an archive.
 
@@ -70,6 +73,7 @@ class Archive(object):
 
     if not suffixes:
       raise UnsupportedArchiveFormat(
+<<<<<<< HEAD:labm8/py/archive.py
 <<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/archive.py
         f"Archive '{path_to_determine_type.name}' has no extension",
@@ -83,6 +87,14 @@ class Archive(object):
 <<<<<<< HEAD:labm8/py/archive.py
     elif suffixes[-2:] == [".tar", ".bz2"]:
       self._open_function = lambda f: tarfile.open(f, "r:bz2")
+=======
+          f"Archive '{path_to_determine_type.name}' has no extension",)
+
+    if suffixes[-1] == '.zip':
+      self._open_function = zipfile.ZipFile
+    elif suffixes[-2:] == ['.tar', '.bz2']:
+      self._open_function = lambda f: tarfile.open(f, 'r:bz2')
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/archive.py
       # TODO(cec): Add support for .tar, and .tar.gz.
     else:
       raise UnsupportedArchiveFormat(
@@ -97,6 +109,7 @@ class Archive(object):
       raise UnsupportedArchiveFormat(
           f"Unsupported file extension '{suffixes[-1]}' for archive "
           f"'{path_to_determine_type.name}'",)
+<<<<<<< HEAD:labm8/py/archive.py
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/archive.py
 =======
         f"Archive '{path_to_determine_type.name}' has no extension",
@@ -113,6 +126,8 @@ class Archive(object):
         f"'{path_to_determine_type.name}'",
       )
 >>>>>>> 4242aed2a... Automated code format.
+=======
+>>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/archive.py
 
     # Set in __enter__().
     self._uncompressed_path: typing.Optional[pathlib.Path] = None
