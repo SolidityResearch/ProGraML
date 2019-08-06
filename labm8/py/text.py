@@ -280,6 +280,7 @@ def AutoCompletePrefix(prefix: str, trie: nx.DiGraph) -> typing.Set[str]:
 def CamelCapsToUnderscoreSeparated(camel_caps_str: str):
   components = re.findall("[A-Z][^A-Z]*", camel_caps_str)
   assert components
+<<<<<<< HEAD:labm8/py/text.py
   return "_".join(x.lower() for x in components)
 
 
@@ -294,6 +295,14 @@ def StripSingleLineComments(
 =======
   string: str, start_comment_re: str = "(#|//)",
 >>>>>>> 4242aed2a... Automated code format.
+=======
+  return '_'.join(x.lower() for x in components)
+
+
+def StripSingleLineComments(
+    string: str,
+    start_comment_re: str = '(#|//)',
+>>>>>>> 14720263b... Add trailing comma.:labm8/text.py
 ) -> str:
   """Strip line comments from a string.
 
