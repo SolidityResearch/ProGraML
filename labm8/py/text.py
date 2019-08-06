@@ -276,7 +276,12 @@ def CamelCapsToUnderscoreSeparated(camel_caps_str: str):
 
 
 def StripSingleLineComments(
+<<<<<<< HEAD:labm8/py/text.py
   string: str, start_comment_re: str = "(#|//)",
+=======
+    string: str,
+    start_comment_re: str = '(#|//)',
+>>>>>>> 14720263b... Add trailing comma.:labm8/text.py
 ) -> str:
   """Strip line comments from a string.
 
