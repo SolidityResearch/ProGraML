@@ -11,10 +11,13 @@ import typing
 
 <<<<<<< HEAD:labm8/py/bazelutil.py
 <<<<<<< HEAD:labm8/py/bazelutil.py
+<<<<<<< HEAD:labm8/py/bazelutil.py
 from labm8.py import app
 from labm8.py import archive
 from labm8.py import fs
 =======
+=======
+>>>>>>> 6901f306f... Fix transitive dep resolving.:labm8/bazelutil.py
 from labm8 import app
 from labm8 import archive
 from labm8 import fs
@@ -221,6 +224,7 @@ class Workspace(object):
             timeout_seconds: int = 360,
             **subprocess_kwargs):
 <<<<<<< HEAD:labm8/py/bazelutil.py
+<<<<<<< HEAD:labm8/py/bazelutil.py
 >>>>>>> 6d5f13a15... Resolve dependencies for each target in turn.:labm8/bazelutil.py
     with fs.chdir(self.workspace_root):
 <<<<<<< HEAD:labm8/py/bazelutil.py
@@ -249,6 +253,19 @@ class Workspace(object):
       "--noshow_progress",
     ] + args
     app.Log(2, "$ %s", " ".join(cmd))
+    with fs.chdir(self.workspace_root):
+      return subprocess.Popen(cmd, **subprocess_kwargs)
+>>>>>>> 6901f306f... Fix transitive dep resolving.:labm8/bazelutil.py
+=======
+    cmd = [
+        'timeout',
+        '-s9',
+        str(timeout_seconds),
+        'bazel',
+        command,
+        '--noshow_progress',
+    ] + args
+    app.Log(2, '$ %s', ' '.join(cmd))
     with fs.chdir(self.workspace_root):
       return subprocess.Popen(cmd, **subprocess_kwargs)
 >>>>>>> 6901f306f... Fix transitive dep resolving.:labm8/bazelutil.py
@@ -389,7 +406,10 @@ class Workspace(object):
     targets = [target for target in targets if target not in excluded_targets]
     all_targets = targets.copy()
     for i, target in enumerate(targets):
+<<<<<<< HEAD:labm8/py/bazelutil.py
 <<<<<<< HEAD
+=======
+>>>>>>> 6901f306f... Fix transitive dep resolving.:labm8/bazelutil.py
       app.Log(1, 'Collecting transitive deps for target %d of %d: %s', i + 1,
               len(targets), target)
       bazel = self.BazelQuery([f'deps({target})'], stdout=subprocess.PIPE)
@@ -424,6 +444,7 @@ class Workspace(object):
       if grep.returncode:
         raise OSError("grep of bazel query output failed")
 
+<<<<<<< HEAD:labm8/py/bazelutil.py
 <<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/bazelutil.py
       deps = stdout.rstrip().split("\n")
@@ -445,6 +466,14 @@ class Workspace(object):
     paths = [self.MaybeTargetToPath(target) for target in targets]
 >>>>>>> 6d5f13a15... Resolve dependencies for each target in turn.:labm8/bazelutil.py
 =======
+    paths = [self.MaybeTargetToPath(target) for target in all_targets]
+>>>>>>> 6901f306f... Fix transitive dep resolving.:labm8/bazelutil.py
+=======
+      deps = stdout.rstrip().split('\n')
+      all_targets += [
+          target for target in deps if target not in excluded_targets
+      ]
+
     paths = [self.MaybeTargetToPath(target) for target in all_targets]
 >>>>>>> 6901f306f... Fix transitive dep resolving.:labm8/bazelutil.py
     return [path for path in paths if path]
