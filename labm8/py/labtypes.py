@@ -309,12 +309,15 @@ def Chunkify(
 
 <<<<<<< HEAD:labm8/py/labtypes.py
 <<<<<<< HEAD:labm8/py/labtypes.py
+<<<<<<< HEAD:labm8/py/labtypes.py
 
 =======
 >>>>>>> 4f357866c... Add two utility functions.:labm8/labtypes.py
 =======
 
 >>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/labtypes.py
+=======
+>>>>>>> 4f357866c... Add two utility functions.:labm8/labtypes.py
 def DeleteKeys(d, keys):
   """Delete the keys from the given dictionary, if present.
 
@@ -330,6 +333,7 @@ def DeleteKeys(d, keys):
       del d[key]
   return d
 <<<<<<< HEAD:labm8/py/labtypes.py
+<<<<<<< HEAD:labm8/py/labtypes.py
 =======
       [s for c in cls.__subclasses__() for s in AllSubclassesOfClass(c)])
 >>>>>>> 8a82495b7... Add labm8.labtypes.AllSubclassesOfClass() method.:labm8/labtypes.py
@@ -341,3 +345,5 @@ def DeleteKeys(d, keys):
 =======
       [s for c in cls.__subclasses__() for s in AllSubclassesOfClass(c)],)
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/labtypes.py
+=======
+>>>>>>> 4f357866c... Add two utility functions.:labm8/labtypes.py
