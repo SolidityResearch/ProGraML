@@ -73,11 +73,18 @@ def BytecodeFromOpenClString(
   process = clang.Exec(clang_args, stdin=opencl_string)
   if process.returncode:
     raise clang.ClangException(
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_pact17_devmap.py
       "clang failed",
       returncode=process.returncode,
       stderr=process.stderr,
       command=clang_args,
     )
+=======
+        "clang failed",
+        returncode=process.returncode,
+        stderr=process.stderr,
+        command=clang_args)
+>>>>>>> 79a9a3551... Work in progress on graph model.:deeplearning/ml4pl/bytecode/create/import_from_pact17_devmap.py
   return process.stdout, clang_args
 
 
@@ -240,6 +247,7 @@ class OpenClDeviceMappingsDataset(ocl_dataset.OpenClDeviceMappingsDataset):
 
     # Create the output table.
     df = pd.DataFrame(
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_pact17_devmap.py
       rows,
       columns=[
         "program:benchmark_suite_name",
@@ -262,6 +270,27 @@ class OpenClDeviceMappingsDataset(ocl_dataset.OpenClDeviceMappingsDataset):
       ],
       inplace=True,
     )
+=======
+        rows,
+        columns=[
+            'program:benchmark_suite_name',
+            'program:benchmark_name',
+            'program:opencl_kernel_name',
+            'cfg:graph',
+            'cfg:block_count',
+            'cfg:edge_count',
+            'cfg:edge_density',
+            'cfg:is_valid',
+            'cfg:is_strict_valid',
+        ])
+
+    df.set_index([
+        'program:benchmark_suite_name',
+        'program:benchmark_name',
+        'program:opencl_kernel_name',
+    ],
+                 inplace=True)
+>>>>>>> 79a9a3551... Work in progress on graph model.:deeplearning/ml4pl/bytecode/create/import_from_pact17_devmap.py
     df.sort_index(inplace=True)
     return df
 

@@ -46,12 +46,19 @@ from labm8.py import labtypes
 
 FLAGS = app.FLAGS
 
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_poj104.py
 app.DEFINE_database(
   "db", database.Database, None, "Path of database to populate."
 )
 app.DEFINE_input_path(
   "dataset", None, "Path of dataset to import.", is_dir=True
 )
+=======
+app.DEFINE_database('db', database.Database, None,
+                    'Path of database to populate.')
+app.DEFINE_input_path(
+    'dataset', None, 'Path of dataset to import.', is_dir=True)
+>>>>>>> 79a9a3551... Work in progress on graph model.:deeplearning/ml4pl/bytecode/create/import_from_poj104.py
 
 
 def LlvmBytecodeIterator(
