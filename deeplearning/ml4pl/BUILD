@@ -15,47 +15,19 @@ exports_repo(
         "docs/wip_graph/notebooks/run_notebook.sh",
     ],
     github_repo = "ml4pl",
-    move_file_mapping = {
-        "deeplearning/ml4pl/README.md": "README.md",
-        "deeplearning/ml4pl/travis.yml": ".travis.yml",
-    },
     targets = [
         "//deeplearning/ml4pl/...",
-        "//deeplearning/clgen/corpuses/lexer/...",
-        "//deeplearning/clgen/proto/...",
         "//docs/wip_graph/notebooks/...",
     ],
 )
 
-py_library(
-    name = "filesystem_paths",
-    srcs = ["filesystem_paths.py"],
-    visibility = ["//deeplearning/ml4pl:__subpackages__"],
-    deps = [
-        "//labm8/py:app",
-    ],
+proto_library(
+    name = "ml4pl_pb",
+    srcs = ["ml4pl.proto"],
 )
 
-py_binary(
-    name = "run_id",
-    srcs = ["run_id.py"],
-    visibility = ["//deeplearning/ml4pl:__subpackages__"],
-    deps = [
-        ":filesystem_paths",
-        "//labm8/py:app",
-        "//labm8/py:fs",
-        "//labm8/py:system",
-        "//third_party/py/sqlalchemy",
-    ],
-)
-
-py_test(
-    name = "run_id_test",
-    srcs = ["run_id_test.py"],
-    deps = [
-        ":run_id",
-        "//labm8/py:sqlutil",
-        "//labm8/py:test",
-        "//third_party/py/sqlalchemy",
-    ],
+python_proto_library(
+    name = "ml4pl_pb_py",
+    visibility = ["//visibility:public"],
+    deps = [":ml4pl_pb"],
 )
