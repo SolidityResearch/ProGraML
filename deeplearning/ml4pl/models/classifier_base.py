@@ -1,476 +1,344 @@
 """Base class for implementing classifier models."""
-import copy
-from typing import Any
-from typing import Callable
-from typing import Dict
-from typing import Iterable
-from typing import List
-from typing import Optional
-from typing import Set
+import time
 
-import pandas as pd
+import numpy as np
+import pathlib
+import pickle
+import random
+import sklearn.metrics
+import typing
 
-from deeplearning.ml4pl import run_id as run_id_lib
-from deeplearning.ml4pl.graphs.labelled import graph_database_reader
-from deeplearning.ml4pl.graphs.labelled import graph_tuple_database
-from deeplearning.ml4pl.models import batch as batches
-from deeplearning.ml4pl.models import checkpoints
-from deeplearning.ml4pl.models import epoch
-from deeplearning.ml4pl.models import logger as logging
-from labm8.py import app
-from labm8.py import decorators
-from labm8.py import humanize
-from labm8.py import progress
-
+import build_info
+from deeplearning.ml4pl.graphs import graph_database
+from deeplearning.ml4pl.graphs.labelled.graph_dict import graph_batcher
+from deeplearning.ml4pl.models import log_database
+from labm8 import app
+from labm8 import bazelutil
+from labm8 import decorators
+from labm8 import humanize
+from labm8 import jsonutil
+from labm8 import pbutil
+from labm8 import ppar
+from labm8 import prof
+from labm8 import system
 
 FLAGS = app.FLAGS
 
+##### Beginning of flag declarations.
+#
+# Some of these flags define parameters which must be equal when restoring from
+# file, such as the hidden layer sizes. Other parameters may change between
+# runs of the same model, such as the input data batch size. To accomodate for
+# this, a ClassifierBase.GetModelFlagNames() method returns the list of flags
+# which must be consistent between runs of the same model.
+#
+# For the sake of readability, these important model flags are saved into a
+# global set MODEL_FLAGS here, so that the declaration of model flags is local
+# to the declaration of the flag.
+MODEL_FLAGS = set()
+
+app.DEFINE_output_path('working_dir',
+                       '/tmp/deeplearning/ml4pl/models/ggnn/',
+                       'The directory to write files to.',
+                       is_dir=True)
+
+app.DEFINE_database('graph_db',
+                    graph_database.Database,
+                    None,
+                    'The database to read graph data from.',
+                    must_exist=True)
+
+app.DEFINE_database('log_db', log_database.Database, None,
+                    'The database to write logs to.')
+
+app.DEFINE_integer("random_seed", 42, "A random seed value.")
+
+app.DEFINE_input_path(
+    "embedding_path",
+    bazelutil.DataPath('phd/deeplearning/ncc/published_results/emb.p'),
+    "The path of the embeddings file to use.")
+
+app.DEFINE_string(
+    'batch_scores_averaging_method', 'weighted',
+    'Selects the averaging method to use when computing recall/precision/F1 '
+    'scores. See <https://scikit-learn.org/stable/modules/generated/sklearn'
+    '.metrics.f1_score.html>')
+MODEL_FLAGS.add("batch_scores_averaging_method")
 
 app.DEFINE_boolean(
-  "strict_graph_segmentation",
-  False,
-  "If set, strictly enforce that graphs do not cross the "
-  "{train,val,test} epoch boundaries. This is disabled by default as the "
-  "performance and memory overhead may be large for big datasets.",
-)
+    "test_on_improvement", True,
+    "If true, test model accuracy on test data when the validation accuracy "
+    "improves.")
+
+#
+##### End of flag declarations.
+
+SMALL_NUMBER = 1e-7
 
 
 class ClassifierBase(object):
-  """Abstract base class for implementing classifiers.
+  """Abstract base class for implementing classification models."""
 
-  Before using the model, it must be initialized bu calling Initialize(), or
-  restored from a checkpoint using RestoreFrom(checkpoint).
-
-  Subclasses must implement the following methods:
-    MakeBatch()        # construct a batch from input graphs.
-    RunBatch()         # run the model on the batch.
-    GetModelData()     # get model data to save.
-    LoadModelData()    # load model data.
-
-  And may optionally wish to implement these additional methods:
-    CreateModelData()  # initialize an untrained model.
-    Summary()          # return a string model summary.
-    GraphReader()      # return a buffered graph reader.
-    BatchIterator()    # return an iterator over batches.
-  """
-
-  def __init__(
-    self,
-    logger: logging.Logger,
-    graph_db: graph_tuple_database,
-    run_id: Optional[run_id_lib.RunId] = None,
-  ):
-    """Constructor.
-
-    This creates an uninitialized model. Initialize the model before use by
-    calling Initialize() or RestoreFrom(checkpoint).
+  def MakeMinibatchIterator(
+      self, epoch_type: str
+  ) -> typing.Iterable[typing.Tuple[log_database.BatchLog, typing.Any]]:
+    """Create and return an iterator over mini-batches of data.
 
     Args:
-      logger: A logger to write {batch, epoch, checkpoint} data to.
-      graph_db: The graph database which will be used to feed inputs to the
-        model.
-
-    Raises:
-      NotImplementedError: If both node and graph labels are set.
-      TypeError: If neither graph or node labels are set.
-    """
-    # Sanity check the dimensionality of input graphs.
-    if (
-      not graph_db.node_y_dimensionality and not graph_db.graph_y_dimensionality
-    ):
-      raise NotImplementedError(
-        "Neither node or graph labels are set. What am I to do?"
-      )
-    if graph_db.node_y_dimensionality and graph_db.graph_y_dimensionality:
-      raise NotImplementedError(
-        "Both node and graph labels are set. This is currently not supported. "
-        "See <github.com/ChrisCummins/ProGraML/issues/26>"
-      )
-
-    # Model properties.
-    self.logger: logging.Logger = logger
-    self.graph_db: graph_tuple_database.Database = graph_db
-    self.run_id: run_id_lib.RunId = (
-      run_id or run_id_lib.RunId.GenerateUnique(type(self).__name__)
-    )
-    self.y_dimensionality: int = (
-      self.graph_db.node_y_dimensionality
-      or self.graph_db.graph_y_dimensionality
-    )
-
-    # Set by Initialize() and RestoredFrom()
-    self._initialized = False
-    self.restored_from: Optional[checkpoints.CheckpointReference] = None
-
-    # Progress counters that are saved and loaded from checkpoints.
-    self.epoch_num = 0
-    self.best_results: Dict[epoch.Type, epoch.BestResults] = {
-      epoch.Type.TRAIN: epoch.BestResults(),
-      epoch.Type.VAL: epoch.BestResults(),
-      epoch.Type.TEST: epoch.BestResults(),
-    }
-
-    # If --strict_graph_segmentation is set, check for graphs that we have
-    # already seen before by keep a log of all unique graph IDs of each type.
-    self.graph_ids: Dict[epoch.Type, Set[int]] = {
-      epoch.Type.TRAIN: set(),
-      epoch.Type.VAL: set(),
-      epoch.Type.TEST: set(),
-    }
-
-    # Register this model with the logger.
-    self.logger.OnStartRun(self.run_id, self.graph_db)
-
-  #############################################################################
-  # Interface methods. Subclasses must implement these.
-  #############################################################################
-
-  def MakeBatch(
-    self,
-    epoch_type: epoch.Type,
-    graphs: Iterable[graph_tuple_database.GraphTuple],
-    ctx: progress.ProgressContext = progress.NullContext,
-  ) -> batches.Data:
-    """Create a mini-batch of data from an iterator of graphs.
-
-    Implementations of this method must be thread safe. Multiple threads may
-    concurrently call this method using different graph iterators. This is to
-    amortize I/O costs when alternating between training / validation / testing
-    datasets.
+      epoch_type: The type of epoch to return mini-batches for.
 
     Returns:
-      A single batch of data for feeding into RunBatch(). A batch consists of a
-      list of graph IDs and a model-defined blob of data. If the list of graph
-      IDs is empty, the batch is discarded and not fed into RunBatch(). If the
-      end_of_batches flag is set, the batch data is not read.
+      An iterator of mini-batches and batch logs, where each
+      mini-batch will be passed as an argument to RunMinibatch().
     """
     raise NotImplementedError("abstract class")
 
-  def RunBatch(
-    self,
-    epoch_type: epoch.Type,
-    batch: batches.Data,
-    ctx: progress.ProgressContext = progress.NullContext,
-  ) -> batches.Results:
-    """Process a mini-batch of data using the model.
-
-    Args:
-      log: The mini-batch log returned by MakeBatch().
-      batch: The batch data returned by MakeBatch().
-
-    Returns:
-      The target values for the batch, and the predicted values.
-    """
+  def RunMinibatch(self, log: log_database.BatchLog,
+                   batch: typing.Any) -> typing.Tuple[np.array, np.array]:
     raise NotImplementedError("abstract class")
 
-  def CreateModelData(self) -> None:
-    """Initialize the starting state of a model.
+  def GetModelFlagNames(self) -> typing.Iterable[str]:
+    """Subclasses may extend this method to mark additional flags as important."""
+    return MODEL_FLAGS
 
-    Use this method to perform any model-specific initialisation such as
-    randomizing starting weights. When restoring a model from a checkpoint, this
-    method is *not* called. Instead, LoadModelData() will be called.
+  def __init__(self, db: graph_database.Database,
+               log_db: log_database.Database):
+    """Constructor."""
+    self.run_id: str = (f"{time.strftime('%Y%m%dT%H%M%S')}@"
+                        f"{system.HOSTNAME}")
 
-    Note that subclasses must call this superclass method first.
-    """
-    pass
+    self.batcher = graph_batcher.GraphBatcher(
+        db, message_passing_step_count=self.layer_timesteps.sum())
+    self.stats = self.batcher.stats
+    app.Log(1, "%s", self.stats)
 
-  def LoadModelData(self, data_to_load: Any) -> None:
-    """Set the model state from the given model data.
+    self.working_dir = FLAGS.working_dir
+    self.best_model_file = self.working_dir / f'{self.run_id}.best_model.pickle'
+    self.working_dir.mkdir(exist_ok=True, parents=True)
 
-    Args:
-      data_to_load: The return value of GetModelData().
-    """
-    raise NotImplementedError("abstract class")
+    # Write app.Log() calls to file. To also log to stderr, use flag
+    # --alsologtostderr.
+    app.Log(
+        1, 'Writing logs to `%s`. Unless --alsologtostderr flag is set, '
+        'this is the last message you will see', self.working_dir)
+    app.LogToDirectory(self.working_dir, self.run_id)
 
-  def GetModelData(self) -> Any:
-    """Return the model state.
+    self.log_db = log_db
+    app.Log(1, 'Writing batch logs to `%s`', self.log_db.url)
+    self._CreateExperimentalParameters()
 
-    Returns:
-      A  model-defined blob of data that can later be passed to LoadModelData()
-      to restore the current model state.
-    """
-    raise NotImplementedError("abstract class")
+    app.Log(1, "Build information: %s",
+            jsonutil.format_json(pbutil.ToJson(build_info.GetBuildInfo())))
 
-  def Summary(self) -> str:
-    """Return a long summary string describing the model."""
-    return type(self).__name__
+    app.Log(1, "Model flags: %s",
+            jsonutil.format_json(self._ModelFlagsToDict()))
 
-  #############################################################################
-  # Automatic methods.
-  #############################################################################
+    random.seed(FLAGS.random_seed)
+    np.random.seed(FLAGS.random_seed)
 
-  def __call__(
-    self,
-    epoch_type: epoch.Type,
-    batch_iterator: batches.BatchIterator,
-    logger: logging.Logger,
-  ) -> epoch.Results:
-    """Run the model for over the input batches.
-
-    This is the heart of the model - where you run an epoch of batches through
-    the graph and produce results. The interface for training and inference is
-    the same, only the epoch_type value should change.
-
-    Side effects of calling a model are:
-      * The model bumps its epoch_num counter if on a training epoch.
-      * The model updates its best_results dictionary if the accuracy produced
-        by this epoch is greater than the previous best.
-
-    Args:
-      epoch_type: The type of epoch to run.
-      batch_iterator: The batches to process.
-      logger: A logger instance to log results to.
-
-    Returns:
-      An epoch results instance.
-    """
-    if not self._initialized:
-      raise TypeError(
-        "Model called before Initialize() or FromCheckpoint() invoked"
-      )
-
-    # Only training epochs bumps the epoch count.
-    if epoch_type == epoch.Type.TRAIN:
-      self.epoch_num += 1
-
-    thread = EpochThread(self, epoch_type, batch_iterator, logger)
-    progress.Run(thread)
-
-    # Check that there were batches.
-    if not thread.batch_count:
-      raise ValueError("No batches")
-
-    # If --strict_graph_segmentation is set, check for graphs that we have
-    # already seen before.
-    if FLAGS.strict_graph_segmentation:
-      with logger.ctx.Profile(4, "Checked strict graph segmentation"):
-        for other_epoch_type in set(list(epoch.Type)) - {epoch_type}:
-          duplicate_graph_ids = self.graph_ids[other_epoch_type].intersection(
-            thread.graph_ids
-          )
-          if duplicate_graph_ids:
-            raise ValueError(
-              f"{epoch_type} batch contains {len(duplicate_graph_ids)} graphs "
-              f"from {other_epoch_type}: {list(duplicate_graph_ids)[:100]}"
-            )
-        self.graph_ids[epoch_type] = self.graph_ids[epoch_type].union(
-          thread.graph_ids
-        )
-
-    # TODO(github.com/ChrisCummins/ProGraML/issues/38): Explicitly free the
-    # thread object to see if that is contributing to climbing memory usage.
-    results = copy.deepcopy(thread.results)
-    if not results:
-      raise OSError("Epoch produced no results. Did the model crash?")
-    del thread
-
-    # Update the record of best results.
-    if results > self.best_results[epoch_type].results:
-      new_best = epoch.BestResults(epoch_num=self.epoch_num, results=results)
-      logger.ctx.Log(
-        2,
-        "%s results improved from %s",
-        epoch_type.name.capitalize(),
-        self.best_results[epoch_type],
-      )
-      self.best_results[epoch_type] = new_best
-
-    return results
-
-  def GraphReader(
-    self,
-    epoch_type: epoch.Type,
-    graph_db: graph_tuple_database.Database,
-    filters: Optional[List[Callable[[], bool]]] = None,
-    limit: Optional[int] = None,
-    ctx: progress.ProgressContext = progress.NullContext,
-  ) -> graph_database_reader.BufferedGraphReader:
-    """Construct a buffered graph reader.
-
-    Args:
-      epoch_type: The type of graph reader to return a graph reader for.
-      graph_db: The graph database to read graphs from.
-      filters: A list of filters to impose on the graph database reader.
-      limit: The maximum number of rows to read.
-      ctx: A logging context.
-
-    Returns:
-      A buffered graph reader instance.
-    """
-    del epoch_type
-
-    return graph_database_reader.BufferedGraphReader.CreateFromFlags(
-      graph_db=graph_db,
-      filters=filters,
-      ctx=ctx,
-      limit=limit,
-      eager_graph_loading=True,
-    )
-
-  def BatchIterator(
-    self,
-    epoch_type: epoch.Type,
-    graphs: Iterable[graph_tuple_database.GraphTuple],
-    ctx: progress.ProgressContext = progress.NullContext,
-  ) -> Iterable[batches.Data]:
-    """Generate model batches from a iterator of graphs.
-
-    Args:
-      epoch_type: The type of epoch that batches are being constructed for.
-      graphs: The graphs to construct batches from.
-      ctx: A logging context.
-
-    Returns:
-      A batch iterator.
-    """
-    while True:
-      with ctx.Profile(
-        4,
-        lambda t: (
-          f"Constructed batch of "
-          f"{humanize.Plural(batch.graph_count, f'{epoch_type.name.lower()} graph')}"
-        ),
-      ):
-        batch = self.MakeBatch(epoch_type, graphs)
-
-      yield batch
-
-  def Initialize(self) -> None:
-    """Initialize an untrained model."""
-    if self._initialized:
-      raise TypeError("CreateModelData() called on already-initialized model")
-
-    self._initialized = True
-    self.CreateModelData()
-
-  def RestoreFrom(self, checkpoint_ref: checkpoints.CheckpointReference):
-    """Restore a model from a checkpoint."""
-    self._initialized = True
-    self.restored_from = checkpoint_ref
-    checkpoint = self.logger.Load(checkpoint_ref)
-    self.epoch_num = checkpoint.epoch_num
-    self.best_results = checkpoint.best_results
-    self.LoadModelData(checkpoint.model_data)
-
-  def SaveCheckpoint(self) -> checkpoints.CheckpointReference:
-    """Construct a checkpoint from the current model state.
-
-    Returns:
-      A checkpoint reference.
-    """
-    if not self._initialized:
-      raise TypeError("Cannot save an unitialized model.")
-
-    self.logger.Save(
-      checkpoints.Checkpoint(
-        run_id=self.run_id,
-        epoch_num=self.epoch_num,
-        best_results=self.best_results,
-        model_data=self.GetModelData(),
-      )
-    )
-    return checkpoints.CheckpointReference(
-      run_id=self.run_id, epoch_num=self.epoch_num
-    )
+    # Progress counters. These are saved and restored from file.
+    self.global_training_step = 0
+    self.best_epoch_validation_accuracy = 0
+    self.best_epoch_num = 0
 
   @decorators.memoized_property
-  def parameters(self) -> pd.DataFrame:
-    return self.logger.GetParameters(self.run_id)
+  def labels_dimensionality(self) -> int:
+    return (self.stats.node_labels_dimensionality +
+            self.stats.edge_labels_dimensionality +
+            self.stats.graph_labels_dimensionality)
 
+  @decorators.memoized_property
+  def labels(self):
+    return np.arange(self.labels_dimensionality, dtype=np.int32)
 
-class EpochThread(progress.Progress):
-  """A thread which runs a single epoch of a model.
+  def RunEpoch(self, epoch_num: int, epoch_type: str) -> float:
+    assert epoch_type in {"train", "val", "test"}
+    accuracies = []
 
-  After running this thread, the results of the epoch may be accessed through
-  the 'results' parameter.
-  """
+    batch_type = typing.Tuple[log_database.BatchLog, typing.Dict[str, typing.
+                                                                 Any]]
+    batch_iterator: typing.Iterable[batch_type] = ppar.ThreadedIterator(
+        self.MakeMinibatchIterator(epoch_type), max_queue_size=5)
 
-  def __init__(
-    self,
-    model: ClassifierBase,
-    epoch_type: epoch.Type,
-    batch_iterator: batches.BatchIterator,
-    logger: logging.Logger,
-  ):
-    """Constructor.
+    for step, (log, feed_dict) in enumerate(batch_iterator):
+      if not log.graph_count:
+        raise ValueError("Mini-batch with zero graphs generated")
+
+      batch_start_time = time.time()
+      self.global_training_step += 1
+      log.epoch = epoch_num
+      log.batch = step + 1
+      log.global_step = self.global_training_step
+      log.run_id = self.run_id
+
+      y_true, y_pred = self.RunMinibatch(log, feed_dict)
+
+      # Compute statistics.
+      log.accuracy = sklearn.metrics.accuracy_score(y_true, y_pred)
+      log.precision = sklearn.metrics.precision_score(
+          y_true,
+          y_pred,
+          labels=self.labels,
+          average=FLAGS.batch_scores_averaging_method)
+      log.recall = sklearn.metrics.recall_score(
+          y_true,
+          y_pred,
+          labels=self.labels,
+          average=FLAGS.batch_scores_averaging_method)
+      log.f1 = sklearn.metrics.f1_score(
+          y_true,
+          y_pred,
+          labels=self.labels,
+          average=FLAGS.batch_scores_averaging_method)
+
+      accuracies.append(log.accuracy)
+
+      log.elapsed_time_seconds = time.time() - batch_start_time
+
+      app.Log(1, "%s", log)
+      # Create a new database session for every batch because we don't want to
+      # leave the connection lying around for a long time (they can drop out)
+      # and epochs may take O(hours). Alternatively we could store all of the
+      # logs for an epoch in-memory and write them in a single shot, but this
+      # might consume a lot of memory (when the predictions arrays are large).
+      with self.log_db.Session(commit=True) as session:
+        session.add(log)
+
+    return sum(accuracies) / len(accuracies)
+
+  def Train(self):
+    with self.graph.as_default():
+      for epoch_num in range(1, FLAGS.num_epochs + 1):
+        epoch_start_time = time.time()
+        self.RunEpoch(epoch_num, "train")
+        val_acc = self.RunEpoch(epoch_num, "val")
+        app.Log(1, "Epoch %s completed in %s. Validation "
+                "accuracy: %.2f%%", epoch_num,
+                humanize.Duration(time.time() - epoch_start_time),
+                val_acc * 100)
+
+        if val_acc > self.best_epoch_validation_accuracy:
+          self.SaveModel(self.best_model_file)
+          # Compute the ratio of the new best validation accuracy against the
+          # old best validation accuracy.
+          if self.best_epoch_validation_accuracy:
+            accuracy_ratio = (
+                val_acc /
+                max(self.best_epoch_validation_accuracy, SMALL_NUMBER))
+            relative_increase = f", (+{accuracy_ratio - 1:.3%} relative)"
+          else:
+            relative_increase = ''
+          app.Log(
+              1, "Best epoch so far, validation accuracy increased "
+              "+%.3f%%%s. Saving to '%s'",
+              (val_acc - self.best_epoch_validation_accuracy) * 100,
+              relative_increase, self.best_model_file)
+          self.best_epoch_validation_accuracy = val_acc
+          self.best_epoch_num = epoch_num
+
+          # Run on test set.
+          if FLAGS.test_on_improvement:
+            test_acc = self.RunEpoch(epoch_num, "test")
+            app.Log(1, "Test accuracy at epoch %s: %.5f", epoch_num, test_acc)
+        elif epoch_num - self.best_epoch_num >= FLAGS.patience:
+          app.Log(
+              1, "Stopping training after %i epochs without "
+              "improvement on validation accuracy", FLAGS.patience)
+          break
+
+  def InitializeModel(self) -> None:
+    """Initialize a new model state."""
+    pass
+
+  def ModelDataToSave(self) -> None:
+    return None
+
+  def LoadModelData(self, data_to_load: typing.Any) -> None:
+    return None
+
+  def SaveModel(self, path: pathlib.Path) -> None:
+    data_to_save = {
+        "flags": app.FlagsToDict(json_safe=True),
+        "model_flags": self._ModelFlagsToDict(),
+        "modeL_data": self.ModelDataToSave(),
+        "build_info": pbutil.ToJson(build_info.GetBuildInfo()),
+        "global_training_step": self.global_training_step,
+        "best_epoch_validation_accuracy": self.best_epoch_validation_accuracy,
+        "best_epoch_num": self.best_epoch_num,
+    }
+    with open(path, "wb") as out_file:
+      pickle.dump(data_to_save, out_file, pickle.HIGHEST_PROTOCOL)
+
+  def _CreateExperimentalParameters(self):
+    """Private helper method to populate parameters table."""
+
+    def ToParams(type, key_value_dict):
+      return [
+          log_database.Parameter(
+              run_id=self.run_id,
+              type=type,
+              parameter=str(key),
+              value=str(value),
+          ) for key, value in key_value_dict.items()
+      ]
+
+    with self.log_db.Session(commit=True) as session:
+      session.add_all(
+          ToParams('flags', app.FlagsToDict()) +
+          ToParams('modeL_flags', self._ModelFlagsToDict()) +
+          ToParams('build_info', pbutil.ToJson(build_info.GetBuildInfo())))
+
+  def CheckThatModelFlagsAreEquivalent(self, flags, saved_flags) -> None:
+    for flag, flag_value in flags.items():
+      if flag_value != saved_flags[flag]:
+        raise EnvironmentError(
+            f"Saved flag {flag} value does not match current value:"
+            f"'{saved_flags[flag]}' != '{flag_value}'")
+
+  def LoadModel(self, path: pathlib.Path) -> None:
+    """Load and restore the model from the given model file.
 
     Args:
-      model: A model instance.
-      epoch_type: The type of epoch to run.
-      batch_iterator: A batch iterator.
-      logger: A logger.
+      path: The path of the file to restore from, as created by SaveModel().
+
+    Raises:
+      EnvironmentError: If the flags in the saved model do not match the current
+        model flags.
     """
-    self.model = model
-    self.epoch_type = epoch_type
-    self.batch_iterator = batch_iterator
-    self.logger = logger
-    self.batch_count = 0
+    with prof.Profile(f"Read pickled model from `{path}`"):
+      with open(path, "rb") as in_file:
+        data_to_load = pickle.load(in_file)
 
-    # Set at the end of Run().
-    self.results: epoch.Results = None
-    self.graph_ids = set()
+    # Restore progress counters.
+    self.global_training_step = data_to_load.get("global_training_step", 0)
+    self.best_epoch_validation_accuracy = data_to_load.get(
+        "best_epoch_validation_accuracy", 0)
+    self.best_epoch_num = data_to_load.get("best_epoch_num", 0)
 
-    super(EpochThread, self).__init__(
-      f"{epoch_type.name.capitalize()} epoch {model.epoch_num}",
-      0,
-      batch_iterator.graph_count,
-      unit="graph",
-      vertical_position=0,
-      leave=False,
-    )
+    # Assert that we got the same model configuration.
+    # Flag values found in the saved file but not present currently are ignored.
+    flags = self._ModelFlagsToDict()
+    saved_flags = data_to_load["model_flags"]
+    flag_names = set(flags.keys())
+    saved_flag_names = set(saved_flags.keys())
+    if flag_names != saved_flag_names:
+      raise EnvironmentError(
+          "Saved flags do not match current flags. "
+          f"Flags not found in saved flags: '{flag_names - saved_flag_names}'."
+          f"Saved flags not present now: '{saved_flag_names - flag_names}'")
+    self.CheckThatModelFlagsAreEquivalent(flags, saved_flags)
 
-  def Run(self) -> None:
-    """Run the epoch worker thread."""
-    rolling_results = batches.RollingResults()
+    self.LoadModelData(data_to_load['model_data'])
 
-    for i, batch in enumerate(self.batch_iterator.batches):
-      self.batch_count += 1
-      self.ctx.i += batch.graph_count
+  def _ModelFlagsToDict(self) -> typing.Dict[str, typing.Any]:
+    """Return the flags which are """
+    return {
+        flag: jsonutil.JsonSerializable(getattr(FLAGS, flag))
+        for flag in sorted(set(self.GetModelFlagNames()))
+    }
 
-      # Record the unique graph IDs.
-      for graph_id in batch.graph_ids:
-        self.graph_ids.add(graph_id)
-
-      # We have run out of batches.
-      if batch.end_of_batches:
-        break
-
-      # Skip an empty batch.
-      if not batch.graph_count:
-        continue
-
-      # Run the batch through the model.
-      with self.ctx.Profile(
-        3,
-        lambda t: (
-          f"Batch {i+1} with "
-          f"{batch.graph_count} graphs: "
-          f"{batch_results}"
-        ),
-      ) as batch_timer:
-        batch_results = self.model.RunBatch(self.epoch_type, batch)
-
-      # Record the batch results.
-      self.logger.OnBatchEnd(
-        run_id=self.model.run_id,
-        epoch_type=self.epoch_type,
-        epoch_num=self.model.epoch_num,
-        batch_num=i + 1,
-        timer=batch_timer,
-        data=batch,
-        results=batch_results,
-      )
-      rolling_results.Update(
-        batch, batch_results, weight=batch_results.target_count
-      )
-      self.ctx.bar.set_postfix(
-        loss=rolling_results.loss,
-        acc=rolling_results.accuracy,
-        prec=rolling_results.precision,
-        rec=rolling_results.recall,
-      )
-
-    self.results = epoch.Results.FromRollingResults(rolling_results)
-    self.logger.OnEpochEnd(
-      self.model.run_id, self.epoch_type, self.model.epoch_num, self.results
-    )
+  def _GetEmbeddingsTable(self) -> np.array:
+    """Reading embeddings table"""
+    with prof.Profile(f"Read embeddings table `{FLAGS.embedding_path}`"):
+      with open(FLAGS.embedding_path, 'rb') as f:
+        return pickle.load(f)
