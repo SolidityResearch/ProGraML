@@ -37,12 +37,21 @@ import os
 import pathlib
 import typing
 
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_poj104.py
 from deeplearning.ml4pl import ml4pl_pb2
 from deeplearning.ml4pl.bytecode import bytecode_database as database
 from labm8.py import app
 from labm8.py import fs
 from labm8.py import labtypes
 
+=======
+from labm8 import app
+from labm8 import fs
+from labm8 import labtypes
+>>>>>>> 1acf38cb4... Automated code format.:deeplearning/ml4pl/bytecode/create/import_from_poj104.py
+
+from deeplearning.ml4pl import ml4pl_pb2
+from deeplearning.ml4pl.bytecode import bytecode_database as database
 
 FLAGS = app.FLAGS
 
@@ -56,9 +65,16 @@ app.DEFINE_input_path(
 =======
 app.DEFINE_database('db', database.Database, None,
                     'Path of database to populate.')
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_poj104.py
 app.DEFINE_input_path(
     'dataset', None, 'Path of dataset to import.', is_dir=True)
 >>>>>>> 79a9a3551... Work in progress on graph model.:deeplearning/ml4pl/bytecode/create/import_from_poj104.py
+=======
+app.DEFINE_input_path('dataset',
+                      None,
+                      'Path of dataset to import.',
+                      is_dir=True)
+>>>>>>> 1acf38cb4... Automated code format.:deeplearning/ml4pl/bytecode/create/import_from_poj104.py
 
 
 def LlvmBytecodeIterator(

@@ -24,6 +24,11 @@ import typing
 
 import pandas as pd
 import progressbar
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_pact17_devmap.py
+=======
+from labm8 import app
+from labm8 import decorators
+>>>>>>> 1acf38cb4... Automated code format.:deeplearning/ml4pl/bytecode/create/import_from_pact17_devmap.py
 
 from compilers.llvm import clang
 from compilers.llvm import opt_util
@@ -31,6 +36,7 @@ from datasets.opencl.device_mapping import (
   opencl_device_mapping_dataset as ocl_dataset,
 )
 from deeplearning.clgen.preprocessors import opencl
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_pact17_devmap.py
 from deeplearning.ml4pl.graphs.unlabelled.llvm2graph.cfg import (
   control_flow_graph as cfg,
 )
@@ -38,6 +44,12 @@ from deeplearning.ml4pl.graphs.unlabelled.llvm2graph.cfg import llvm_util
 from deeplearning.ml4pl.ir import ir_database
 from labm8.py import app
 from labm8.py import decorators
+=======
+from deeplearning.ml4pl import ml4pl_pb2
+from deeplearning.ml4pl.bytecode import bytecode_database
+from deeplearning.ml4pl.graphs.unlabelled.cfg import control_flow_graph as cfg
+from deeplearning.ml4pl.graphs.unlabelled.cfg import llvm_util
+>>>>>>> 1acf38cb4... Automated code format.:deeplearning/ml4pl/bytecode/create/import_from_pact17_devmap.py
 
 
 FLAGS = app.FLAGS
@@ -72,6 +84,7 @@ def BytecodeFromOpenClString(
   ]
   process = clang.Exec(clang_args, stdin=opencl_string)
   if process.returncode:
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_pact17_devmap.py
     raise clang.ClangException(
 <<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_pact17_devmap.py
       "clang failed",
@@ -85,6 +98,12 @@ def BytecodeFromOpenClString(
         stderr=process.stderr,
         command=clang_args)
 >>>>>>> 79a9a3551... Work in progress on graph model.:deeplearning/ml4pl/bytecode/create/import_from_pact17_devmap.py
+=======
+    raise clang.ClangException("clang failed",
+                               returncode=process.returncode,
+                               stderr=process.stderr,
+                               command=clang_args)
+>>>>>>> 1acf38cb4... Automated code format.:deeplearning/ml4pl/bytecode/create/import_from_pact17_devmap.py
   return process.stdout, clang_args
 
 
@@ -246,6 +265,7 @@ class OpenClDeviceMappingsDataset(ocl_dataset.OpenClDeviceMappingsDataset):
         rows.append(row)
 
     # Create the output table.
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_pact17_devmap.py
     df = pd.DataFrame(
 <<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_pact17_devmap.py
       rows,
@@ -283,6 +303,20 @@ class OpenClDeviceMappingsDataset(ocl_dataset.OpenClDeviceMappingsDataset):
             'cfg:is_valid',
             'cfg:is_strict_valid',
         ])
+=======
+    df = pd.DataFrame(rows,
+                      columns=[
+                          'program:benchmark_suite_name',
+                          'program:benchmark_name',
+                          'program:opencl_kernel_name',
+                          'cfg:graph',
+                          'cfg:block_count',
+                          'cfg:edge_count',
+                          'cfg:edge_density',
+                          'cfg:is_valid',
+                          'cfg:is_strict_valid',
+                      ])
+>>>>>>> 1acf38cb4... Automated code format.:deeplearning/ml4pl/bytecode/create/import_from_pact17_devmap.py
 
     df.set_index([
         'program:benchmark_suite_name',

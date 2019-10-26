@@ -21,6 +21,11 @@ import typing
 import pandas as pd
 import progressbar
 import pyparsing
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_linux.py
+=======
+from labm8 import app
+from labm8 import decorators
+>>>>>>> 1acf38cb4... Automated code format.:deeplearning/ml4pl/bytecode/create/import_from_linux.py
 
 from compilers.llvm import clang
 from compilers.llvm import opt
@@ -28,6 +33,7 @@ from compilers.llvm import opt_util
 from datasets.linux import linux
 from deeplearning.ml4pl import ml4pl_pb2
 from deeplearning.ml4pl.bytecode import bytecode_database
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_linux.py
 from deeplearning.ml4pl.graphs.unlabelled.llvm2graph.cfg import (
   control_flow_graph as cfg,
 )
@@ -36,6 +42,10 @@ from labm8.py import app
 from labm8.py import decorators
 
 
+=======
+from deeplearning.ml4pl.graphs.unlabelled.cfg import control_flow_graph as cfg
+from deeplearning.ml4pl.graphs.unlabelled.cfg import llvm_util
+>>>>>>> 1acf38cb4... Automated code format.:deeplearning/ml4pl/bytecode/create/import_from_linux.py
 
 FLAGS = app.FLAGS
 
@@ -124,6 +134,7 @@ def BytecodeFromLinuxSrc(path: pathlib.Path, optimization_level: str) -> str:
   ]
   process = clang.Exec(clang_args)
   if process.returncode:
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_linux.py
     raise clang.ClangException(
 <<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_linux.py
       returncode=process.returncode, stderr=process.stderr, command=clang_args
@@ -133,6 +144,11 @@ def BytecodeFromLinuxSrc(path: pathlib.Path, optimization_level: str) -> str:
         stderr=process.stderr,
         command=clang_args)
 >>>>>>> 79a9a3551... Work in progress on graph model.:deeplearning/ml4pl/bytecode/create/import_from_linux.py
+=======
+    raise clang.ClangException(returncode=process.returncode,
+                               stderr=process.stderr,
+                               command=clang_args)
+>>>>>>> 1acf38cb4... Automated code format.:deeplearning/ml4pl/bytecode/create/import_from_linux.py
   return process.stdout, clang_args
 
 
@@ -284,6 +300,7 @@ class LinuxSourcesDataset(linux.LinuxSourcesDataset):
         rows += row_batch
 
     # Create the output table.
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_linux.py
     df = pd.DataFrame(
 <<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_linux.py
       rows,
@@ -310,6 +327,18 @@ class LinuxSourcesDataset(linux.LinuxSourcesDataset):
             'cfg:is_valid',
             'cfg:is_strict_valid',
         ])
+=======
+    df = pd.DataFrame(rows,
+                      columns=[
+                          'program:src_relpath',
+                          'cfg:graph',
+                          'cfg:block_count',
+                          'cfg:edge_count',
+                          'cfg:edge_density',
+                          'cfg:is_valid',
+                          'cfg:is_strict_valid',
+                      ])
+>>>>>>> 1acf38cb4... Automated code format.:deeplearning/ml4pl/bytecode/create/import_from_linux.py
 
     df.set_index([
         'program:src_relpath',
