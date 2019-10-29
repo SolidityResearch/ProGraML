@@ -4,10 +4,17 @@ py_binary(
     name = "import_from_directory",
     srcs = ["import_from_directory.py"],
     deps = [
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/BUILD
         "//deeplearning/ml4pl/ir:ir_database",
         "//labm8/py:app",
         "//labm8/py:fs",
         "//labm8/py:sqlutil",
+=======
+        "//deeplearning/ml4pl/bytecode:bytecode_database",
+        "//labm8:app",
+        "//labm8:fs",
+        "//labm8:sqlutil",
+>>>>>>> a6aea9070... Add a script to import bytecode from a database.:deeplearning/ml4pl/bytecode/create/BUILD
     ],
 )
 
