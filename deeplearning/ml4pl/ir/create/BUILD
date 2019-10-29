@@ -117,8 +117,29 @@ py_binary(
     name = "import_from_poj104",
     srcs = ["import_from_poj104.py"],
     deps = [
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/BUILD
         "//deeplearning/ml4pl/ir:ir_database",
         "//labm8/py:app",
         "//labm8/py:fs",
+=======
+        "//deeplearning/ml4pl:ml4pl_pb_py",
+        "//deeplearning/ml4pl/bytecode:bytecode_database",
+        "//labm8:app",
+        "//labm8:fs",
+    ],
+)
+
+py_binary(
+    name = "populate_cfg_table",
+    srcs = ["populate_cfg_table.py"],
+    deps = [
+        "//compilers/llvm:opt",
+        "//compilers/llvm:opt_util",
+        "//deeplearning/ml4pl:ml4pl_pb_py",
+        "//deeplearning/ml4pl/bytecode:bytecode_database",
+        "//deeplearning/ml4pl/graphs/unlabelled/cfg:control_flow_graph",
+        "//deeplearning/ml4pl/graphs/unlabelled/cfg:llvm_util",
+        "//labm8:app",
+>>>>>>> a811cbd12... Auto-format BUILD files.:deeplearning/ml4pl/bytecode/create/BUILD
     ],
 )

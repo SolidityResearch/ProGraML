@@ -864,10 +864,16 @@ py_library(
     visibility = ["//visibility:public"],
     deps = [
 <<<<<<< HEAD:labm8/py/BUILD
+<<<<<<< HEAD:labm8/py/BUILD
         ":humanize",
         ":labdate",
         ":pbutil",
         ":progress",
+=======
+        ":humanize",
+        ":labdate",
+        ":pbutil",
+>>>>>>> a811cbd12... Auto-format BUILD files.:labm8/BUILD
         ":text",
 =======
         ":pbutil",
