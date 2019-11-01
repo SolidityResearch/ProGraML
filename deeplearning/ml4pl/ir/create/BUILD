@@ -53,13 +53,18 @@ py_library(
     ],
 )
 
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/BUILD
 # TODO(github.com/ChrisCummins/ProGraML/issues/7): Linux build is broken.
+=======
+# TODO(cec): Broken.
+>>>>>>> 6c5b8358f... Update tests.:deeplearning/ml4pl/bytecode/create/BUILD
 #py_test(
 #    name = "import_from_linux_test",
 #    srcs = ["import_from_linux_test.py"],
 #    deps = [
 #        ":import_from_linux",
 #        "//datasets/linux",
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/BUILD
 #        "//labm8/py:app",
 #        "//labm8/py:system",
 #        "//labm8/py:test",
@@ -78,6 +83,14 @@ py_binary(
         "//labm8/py:sqlutil",
     ],
 )
+=======
+#        "//labm8:app",
+#        "//labm8:system",
+#        "//labm8:test",
+#        "//third_party/py/pytest",
+#    ],
+#)
+>>>>>>> 6c5b8358f... Update tests.:deeplearning/ml4pl/bytecode/create/BUILD
 
 py_binary(
     name = "import_from_npb",
