@@ -1,384 +1,138 @@
 """Unit tests for //deeplearning/ml4pl/models:classifier_base."""
-import copy
-import random
-from typing import Iterable
-from typing import Tuple
-
+import pathlib
+import pickle
+import networkx as nx
+import typing
+import pytest
 import numpy as np
 
-from deeplearning.ml4pl import run_id as run_id_lib
-from deeplearning.ml4pl.graphs.labelled import graph_database_reader
-from deeplearning.ml4pl.graphs.labelled import graph_tuple_database
-from deeplearning.ml4pl.models import batch as batches
-from deeplearning.ml4pl.models import checkpoints
+from deeplearning.ml4pl.graphs import graph_database
+from deeplearning.ml4pl.graphs.unlabelled.cdfg import random_cdfg_generator
 from deeplearning.ml4pl.models import classifier_base
-from deeplearning.ml4pl.models import epoch
 from deeplearning.ml4pl.models import log_database
-from deeplearning.ml4pl.models import logger as logging
-from deeplearning.ml4pl.testing import random_graph_tuple_database_generator
-from deeplearning.ml4pl.testing import testing_databases
-from labm8.py import progress
-from labm8.py import test
-
-FLAGS = test.FLAGS
+from labm8 import app
+from labm8 import test
 
 
-###############################################################################
-# Fixtures and mocks.
-###############################################################################
+FLAGS = app.FLAGS
 
 
-@test.Fixture(
-  scope="session",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("log_db"),
-)
-def log_db(request) -> log_database.Database:
-  """A test fixture which yields an empty log database."""
-  yield from testing_databases.YieldDatabase(
-    log_database.Database, request.param
-  )
+@pytest.fixture(scope='function')
+def graph_db(tempdir: pathlib.Path) -> graph_database.Database:
+  """Fixture which returns a graph database containing 50 random graphs."""
+  db = graph_database.Database(f'sqlite:///{tempdir}/graphs.db')
+  graphs = (list(_MakeNRandomGraphs(30, 'train')) +
+            list(_MakeNRandomGraphs(10, 'val')) +
+            list(_MakeNRandomGraphs(10, 'test')))
+  random_cdfg_generator.AddRandomAnnotations(
+      graphs,
+      graph_y_choices=[np.array([1, 0], dtype=np.int32),
+                       np.array([0, 1], dtype=np.int32)])
+  with db.Session(commit=True) as s:
+    s.add_all(
+        [graph_database.GraphMeta.CreateFromNetworkX(g) for g in graphs])
+  return db
 
 
-@test.Fixture(scope="session")
-def logger(log_db: log_database.Database) -> logging.Logger:
-  """A test fixture which yields a logger."""
-  with logging.Logger(log_db, max_buffer_length=128) as logger:
-    yield logger
-
-
-# Currently, only 2-dimension node features are supported.
-@test.Fixture(scope="session", params=(2,), namer=lambda x: f"node_x:{x}")
-def node_x_dimensionality(request) -> int:
-  """A test fixture which enumerates node feature dimensionalities."""
-  return request.param
-
-
-@test.Fixture(scope="session", params=(0, 2), namer=lambda x: f"graph_x:{x}")
-def graph_x_dimensionality(request) -> int:
-  """A test fixture which enumerates graph feature dimensionalities."""
-  return request.param
-
-
-@test.Fixture(
-  scope="session",
-  params=((0, 2), (0, 3), (2, 0), (10, 0)),
-  namer=lambda x: f"graph_y:{x[0]}-node_y:{x[1]}",
-)
-def y_dimensionalities(request) -> Tuple[int, int]:
-  """A test fixture which enumerates node and graph label dimensionalities.
-
-  We are interested in testing the following setups:
-    * Binary node classification.
-    * Multi-class node classification.
-    * Binary graph classification.
-    * Multi-class graph classification.
-  """
-  return request.param
-
-
-@test.Fixture(
-  scope="session",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("graph_db"),
-)
-def graph_db(
-  request,
-  node_x_dimensionality: int,
-  graph_x_dimensionality: int,
-  y_dimensionalities: Tuple[int, int],
-) -> graph_tuple_database.Database:
-  """A test fixture which enumerates graph databases."""
-  node_y_dimensionality, graph_y_dimensionality = y_dimensionalities
-
-  with testing_databases.DatabaseContext(
-    graph_tuple_database.Database, request.param
-  ) as db:
-    random_graph_tuple_database_generator.PopulateDatabaseWithRandomGraphTuples(
-      db,
-      graph_count=50,
-      node_x_dimensionality=node_x_dimensionality,
-      node_y_dimensionality=node_y_dimensionality,
-      graph_x_dimensionality=graph_x_dimensionality,
-      graph_y_dimensionality=graph_y_dimensionality,
-      with_data_flow=True,
-    )
-    yield db
+@pytest.fixture(scope='function')
+def log_db(tempdir: pathlib.Path) -> log_database.Database:
+  return log_database.Database(f'sqlite:///{tempdir}/logs.db')
 
 
 class MockModel(classifier_base.ClassifierBase):
-  """A mock classifier model."""
+  """A mock GGNN model."""
 
-  def __init__(
-    self, *args, has_loss: bool = True, has_learning_rate: bool = True, **kwargs
-  ):
-    self.model_data = None
-    self.has_loss = has_loss
-    self.has_learning_rate = has_learning_rate
+  def __init__(self):
 
-    # Counters for testing method calls.
-    self.create_model_data_count = 0
-    self.make_batch_count = 0
-    self.run_batch_count = 0
-    self.graph_count = 0
-
-    super(MockModel, self).__init__(*args, **kwargs)
-
-  def CreateModelData(self) -> None:
-    """Generate the "state" of the model."""
-    self.create_model_data_count += 1
-    self.model_data = {"foo": 1, "last_graph_id": None}
-
-  def MakeBatch(
-    self,
-    epoch_type: epoch.Type,
-    graphs: Iterable[graph_tuple_database.GraphTuple],
-    ctx: progress.ProgressContext = progress.NullContext,
-  ) -> batches.Data:
-    """Generate a fake batch of data."""
-    del epoch_type  # Unused.
-    del ctx  # Unused.
-
-    self.make_batch_count += 1
-
-    graph_ids = []
-    while len(graph_ids) < 100:
-      try:
-        graph_ids.append(next(graphs).id)
-      except StopIteration:
-        if len(graph_ids) == 0:
-          return batches.EndOfBatches()
-        break
-
-    return batches.Data(graph_ids=graph_ids, data=123)
-
-  def RunBatch(
-    self,
-    epoch_type: epoch.Type,
-    batch: batches.Data,
-    ctx: progress.ProgressContext = progress.NullContext,
-  ) -> batches.Results:
-    # Update the mock class counters.
-    self.run_batch_count += 1
-    self.graph_count += len(batch.graph_ids)
-    self.model_data["last_graph_id"] = batch.graph_ids[-1]
-
-    # Sanity check that batch data is propagated.
-    assert batch.data == 123
-
-    learning_rate = random.random() if self.has_learning_rate else None
-    loss = random.random() if self.has_loss else None
-
-    results = batches.Results.Create(
-      targets=np.random.rand(batch.graph_count, self.y_dimensionality),
-      predictions=np.random.rand(batch.graph_count, self.y_dimensionality),
-      iteration_count=random.randint(1, 3),
-      model_converged=random.choice([False, True]),
-      learning_rate=learning_rate,
-      loss=loss,
-    )
-
-    # Sanity check results properties.
-    if self.has_learning_rate:
-      assert results.has_learning_rate
-    if self.has_loss:
-      assert results.has_loss
-    return results
-
-  def GetModelData(self):
-    """Prepare data to save."""
-    return self.model_data
-
-  def LoadModelData(self, data_to_load):
-    """Reset model state from loaded data."""
-    self.model_data = copy.deepcopy(data_to_load)
+  def ModelDataToSave(self):
+    return {"foo": 1}
+  def LoadModelData(self, data_to_load)
 
 
-@test.Fixture(scope="session", params=(False, True))
-def has_loss(request) -> bool:
-  """A test fixture which enumerates losses."""
-  return request.param
+
+def test_SaveModel(tempdir: pathlib.Path, tempdir2: pathlib.Path,
+                   graph_db: graph_database.Database,
+                   log_db: log_database.Database):
+  """Test saving a model to file."""
+  FLAGS.working_dir = tempdir2
+
+  model = MockModel(graph_db, log_db)
+  model.InitializeModel()
+  model.global_training_step = 10
+  model.SaveModel(tempdir / 'foo.pickle')
+  assert (tempdir / 'foo.pickle').is_file()
+
+  with open(tempdir / 'foo.pickle', 'rb') as f:
+    saved_model = pickle.load(f)
+
+  assert 'model_flags' in saved_model
+  assert 'model_data' in saved_model
+  assert saved_model['global_training_step'] == 10
 
 
-@test.Fixture(scope="session", params=(False, True))
-def has_learning_rate(request) -> bool:
-  """A test fixture which enumerates learning rates."""
-  return request.param
+def test_LoadModel(tempdir: pathlib.Path, tempdir2: pathlib.Path,
+                   graph_db: graph_database.Database,
+                   log_db: log_database.Database):
+  """Test loading a model from file."""
+  FLAGS.working_dir = tempdir2
+
+  model = MockModel(graph_db, log_db)
+  model.InitializeModel()
+  model.epoch_num = 2
+  model.global_training_step = 10
+  model.SaveModel(tempdir / 'foo.pickle')
+
+  model.epoch_num = 0
+  model.global_training_step = 0
+  model.LoadModel(tempdir / 'foo.pickle')
+  assert model.epoch_num == 2
+  assert model.global_training_step == 10
 
 
-@test.Fixture(scope="function")
-def model(
-  logger: logging.Logger,
-  graph_db: graph_tuple_database.Database,
-  has_loss: bool,
-  has_learning_rate: bool,
-) -> MockModel:
-  """A test fixture which enumerates mock models."""
-  run_id = run_id_lib.RunId.GenerateUnique(
-    f"mock{random.randint(0, int(1e6)):06}"
-  )
+def test_LoadModel_unknown_saved_model_flag(
+    tempdir: pathlib.Path, tempdir2: pathlib.Path,
+    graph_db: graph_database.Database, log_db: log_database.Database):
+  """Test that error is raised if saved model contains unknown flag."""
+  FLAGS.working_dir = tempdir2
+  model = MockModel(graph_db, log_db)
+  model.InitializeModel()
+  model.SaveModel(tempdir / 'foo.pickle')
 
-  return MockModel(
-    logger=logger,
-    graph_db=graph_db,
-    run_id=run_id,
-    has_loss=has_loss,
-    has_learning_rate=has_learning_rate,
-  )
+  with open(tempdir / 'foo.pickle', 'rb') as f:
+    saved_model = pickle.load(f)
 
+  saved_model['model_flags']['a new flag'] = 10
 
-@test.Fixture(scope="function")
-def batch_iterator(
-  model: MockModel, graph_db: graph_tuple_database.Database,
-) -> batches.BatchIterator:
-  return batches.BatchIterator(
-    batches=model.BatchIterator(
-      epoch.Type.TRAIN, graph_database_reader.BufferedGraphReader(graph_db)
-    ),
-    graph_count=graph_db.graph_count,
-  )
+  with open(tempdir / 'foo.pickle', 'wb') as f:
+    pickle.dump(saved_model, f)
+
+  with pytest.raises(EnvironmentError) as e_ctx:
+    model.LoadModel(tempdir / 'foo.pickle')
+
+  assert 'a new flag' in str(e_ctx.value)
 
 
-@test.Fixture(scope="session", params=list(epoch.Type))
-def epoch_type(request) -> epoch.Type:
-  """A test fixture which enumerates epoch types."""
-  return request.param
+def test_Train(tempdir2: pathlib.Path, graph_db: graph_database.Database,
+               log_db: log_database.Database):
+  """Test that training terminates and bumps the epoch number."""
+  FLAGS.working_dir = tempdir2
+  FLAGS.num_epochs = 1
 
+  model = MockModel(graph_db, log_db)
+  model.InitializeModel()
+  model.Train()
+  assert model.best_epoch_num == 1
 
-@test.Fixture(scope="session", params=(0, 5))
-def epoch_num(request) -> int:
-  return request.param
+def _MakeNRandomGraphs(n: int, group: str) -> typing.Iterable[nx.MultiDiGraph]:
+  """Private helper to generate random graphs of the given group."""
+  for i in range(n):
+    g = random_cdfg_generator.FastCreateRandom()
+    g.bytecode_id = 0
+    g.relpath = str(i)
+    g.language = 'c'
+    g.group = group
+    g.source_name = 'rand'
+    yield g
 
-
-###############################################################################
-# Tests.
-###############################################################################
-
-
-def test_load_restore_model_from_checkpoint(
-  logger: logging.Logger,
-  graph_db: graph_tuple_database.Database,
-  has_loss: bool,
-  has_learning_rate: bool,
-):
-  """Test creating and restoring model from checkpoint."""
-  model = MockModel(logger, graph_db)
-  model.Initialize()
-
-  # Mutate model state.
-  model.epoch_num = 5
-  model.model_data = 15
-
-  # Create the checkpoint to restore from.
-  checkpoint_ref = model.SaveCheckpoint()
-  assert checkpoint_ref.run_id == model.run_id
-  assert checkpoint_ref.epoch_num == model.epoch_num
-
-  # Create a new model from this checkpoint.
-  restored_model = MockModel(
-    logger, graph_db, has_loss=has_loss, has_learning_rate=has_learning_rate,
-  )
-  restored_model.RestoreFrom(checkpoint_ref)
-
-  # The first model was initialized with Initialize(), the second was not.
-  assert model.create_model_data_count == 1
-  assert restored_model.create_model_data_count == 0
-
-  # restored_from is a checkpoint reference
-  assert isinstance(
-    restored_model.restored_from, checkpoints.CheckpointReference
-  )
-  assert restored_model.restored_from.run_id == model.run_id
-  assert restored_model.restored_from.epoch_num == 5
-
-  assert restored_model.run_id != model.run_id
-
-  # Check that mutated model state was restored.
-  assert restored_model.epoch_num == 5
-  assert restored_model.model_data == 15
-
-
-def test_call(
-  model: MockModel,
-  epoch_type: epoch.Type,
-  batch_iterator: batches.BatchIterator,
-  logger: logging.Logger,
-):
-  """Test that call returns results."""
-  model.Initialize()
-  results = model(
-    epoch_type=epoch_type, batch_iterator=batch_iterator, logger=logger
-  )
-  assert isinstance(results, epoch.Results)
-  # Test that the model saw all of the input graphs.
-  assert model.graph_count == batch_iterator.graph_count
-  # Test that batch counts match up. More batches can be made than are used
-  # (because the last batch could be empty).
-  assert results.batch_count <= model.make_batch_count
-  assert results.batch_count == model.run_batch_count
-  # Check that result properties are propagated.
-  # FIXME:
-  # assert results.has_loss == model.has_loss
-  # assert results.has_learning_rate == model.has_learning_rate
-
-
-def test_empty_batches_is_not_error(
-  graph_db: graph_tuple_database.Database, logger: logging.Logger,
-):
-  """Test that empty batches are ignored.
-
-  Regression test for <github.com/ChrisCummins/ProGraML/issues/43>. Empty batch
-  generation was determined to be the cause of flaky model crashes.
-  """
-
-  class FlakyBatchModel(MockModel):
-    """A mock model which returns ~50% empty batches."""
-
-    def __init__(self, *args, **kwargs):
-      super(FlakyBatchModel, self).__init__(*args, **kwargs)
-      self._batch_count = 0
-
-    def MakeBatch(
-      self,
-      epoch_type: epoch.Type,
-      graphs: Iterable[graph_tuple_database.GraphTuple],
-      ctx: progress.ProgressContext = progress.NullContext,
-    ) -> batches.Data:
-      self._batch_count += 1
-
-      if self._batch_count == 1:
-        # Always return an empty first batch.
-        return batches.EmptyBatch()
-      elif self._batch_count == 2:
-        # Always return a real second batch (otherwise the epoch may end up with
-        # nothing but empty batches).
-        return super(FlakyBatchModel, self).MakeBatch(epoch_type, graphs, ctx)
-
-      # Return subsequent batches with 50% success rate.
-      if random.random() < 0.5:
-        return super(FlakyBatchModel, self).MakeBatch(epoch_type, graphs, ctx)
-      else:
-        return batches.EmptyBatch()
-
-  run_id = run_id_lib.RunId.GenerateUnique(
-    f"mock{random.randint(0, int(1e6)):06}"
-  )
-
-  model = FlakyBatchModel(logger=logger, graph_db=graph_db, run_id=run_id,)
-
-  batch_iterator = batches.BatchIterator(
-    batches=model.BatchIterator(
-      epoch.Type.TRAIN, graph_database_reader.BufferedGraphReader(graph_db)
-    ),
-    graph_count=graph_db.graph_count,
-  )
-
-  model.Initialize()
-  results = model(
-    epoch_type=epoch.Type.TRAIN, batch_iterator=batch_iterator, logger=logger
-  )
-  assert results.batch_count >= 1
-
-
-if __name__ == "__main__":
+if __name__ == '__main__':
   test.Main()
