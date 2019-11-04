@@ -54,10 +54,14 @@ py_library(
 )
 
 <<<<<<< HEAD:deeplearning/ml4pl/ir/create/BUILD
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/BUILD
 # TODO(github.com/ChrisCummins/ProGraML/issues/7): Linux build is broken.
 =======
 # TODO(cec): Broken.
 >>>>>>> 6c5b8358f... Update tests.:deeplearning/ml4pl/bytecode/create/BUILD
+=======
+# TODO(cec): Linux build is broken. Investigate later.
+>>>>>>> 8d355fc4c... Remove unused BUILD target.:deeplearning/ml4pl/bytecode/create/BUILD
 #py_test(
 #    name = "import_from_linux_test",
 #    srcs = ["import_from_linux_test.py"],
@@ -149,6 +153,7 @@ py_binary(
         "//labm8:fs",
     ],
 )
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/BUILD
 
 py_binary(
     name = "populate_cfg_table",
@@ -164,3 +169,5 @@ py_binary(
 >>>>>>> a811cbd12... Auto-format BUILD files.:deeplearning/ml4pl/bytecode/create/BUILD
     ],
 )
+=======
+>>>>>>> 8d355fc4c... Remove unused BUILD target.:deeplearning/ml4pl/bytecode/create/BUILD
