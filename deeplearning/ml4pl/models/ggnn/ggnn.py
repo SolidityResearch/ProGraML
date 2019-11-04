@@ -1,494 +1,441 @@
-"""A gated graph neural network classifier."""
-import math
+"""Train and evaluate a model for node classification."""
+import collections
 import typing
-from typing import Callable
-from typing import Iterable
-from typing import List
-from typing import NamedTuple
-from typing import Optional
 
 import numpy as np
-import torch
-from torch import nn
+import tensorflow as tf
+from labm8 import app
 
-from deeplearning.ml4pl.graphs.labelled import graph_batcher
-from deeplearning.ml4pl.graphs.labelled import graph_database_reader
-from deeplearning.ml4pl.graphs.labelled import graph_tuple
-from deeplearning.ml4pl.graphs.labelled import graph_tuple_database
-from deeplearning.ml4pl.graphs.unlabelled.llvm2graph import node_encoder
-from deeplearning.ml4pl.models import batch as batches
+from deeplearning.ml4pl.graphs.labelled.graph_tuple import graph_batcher
 from deeplearning.ml4pl.models import classifier_base
-from deeplearning.ml4pl.models import epoch
-from deeplearning.ml4pl.models import run
-from deeplearning.ml4pl.models.ggnn import ggnn_config
-from deeplearning.ml4pl.models.ggnn.ggnn_config import GGNNConfig
-from deeplearning.ml4pl.models.ggnn.ggnn_modules import GGNNModel
-from labm8.py import app
-from labm8.py import progress
+from deeplearning.ml4pl.models import log_database
+from deeplearning.ml4pl.models.ggnn import ggnn_base as ggnn
+from deeplearning.ml4pl.models.ggnn import ggnn_utils as utils
 
 FLAGS = app.FLAGS
 
-app.DEFINE_boolean(
-  "cuda", True, "Use cuda if available? CPU-only mode otherwise."
-)
+##### Beginning of flag declarations.
+#
+# Some of these flags define parameters which must be equal when restoring from
+# file, such as the hidden layer sizes. Other parameters may change between
+# runs of the same model, such as the input data batch size. To accomodate for
+# this, a ClassifierBase.GetModelFlagNames() method returns the list of flags
+# which must be consistent between runs of the same model.
+#
+# For the sake of readability, these important model flags are saved into a
+# global set classifier_base.MODEL_FLAGS here, so that the declaration of model
+# flags is local to the declaration of the flag.
+app.DEFINE_string("graph_rnn_cell", "GRU",
+                  "The RNN cell type. One of {GRU,CudnnCompatibleGRUCell,RNN}")
+classifier_base.MODEL_FLAGS.add("graph_rnn_cell")
 
-app.DEFINE_list(
-  "layer_timesteps",
-  ["2", "2", "2"],
-  "A list of layers, and the number of steps for each layer.",
-)
-app.DEFINE_float("learning_rate", 0.001, "The initial learning rate.")
+app.DEFINE_string("graph_rnn_activation", "tanh",
+                  "The RNN activation type. One of {tanh,ReLU}")
+classifier_base.MODEL_FLAGS.add("graph_rnn_activation")
 
-
-app.DEFINE_float("clamp_gradient_norm", 6.0, "Clip gradients to L-2 norm.")
-
-
-app.DEFINE_integer("hidden_size", 200, "The size of hidden layer(s).")
-app.DEFINE_string(
-  "inst2vec_embeddings",
-  "random",
-  "The type of per-node inst2vec embeddings to use. One of {zero, constant, random, random_const, finetune}",
-)
-app.DEFINE_string(
-  "unroll_strategy",
-  "none",
-  "The unroll strategy to use. One of: "
-  "{none, constant, edge_count, data_flow_max_steps, label_convergence} "
-  "constant: Unroll by a constant number of steps. The total number of steps is "
-  "(unroll_factor * message_passing_step_count).",
-)
-app.DEFINE_float(
-  "unroll_factor",
-  0,
-  "Determine the number of dynamic model unrolls to perform. If "
-  "--unroll_strategy=constant, this number of unrolls - each of size "
-  "sum(layer_timesteps) are performed. So one unroll adds sum(layer_timesteps) "
-  "many steps to the network. If --unroll_strategy=edge_counts, "
-  "max_edge_count * --unroll_factor timesteps are performed. (rounded up to "
-  "the next multiple of sum(layer_timesteps))",
-)
-app.DEFINE_boolean(
-  "limit_max_data_flow_steps_during_training",
-  True,
-  "If set, limit the size of dataflow-annotated graphs used to train and "
-  "validate models to only those with data_flow_steps <= sum(layer_timesteps). "
-  "This has no effect for graph databases with no dataflow annotations, or "
-  "for testing epochs.",
-)
-# We assume that position_embeddings exist in every dataset.
-# the flag now only controls whether they are used or not.
-# This could be nice for ablating our model and also debugging with and without.
-
-app.DEFINE_boolean(
-  "position_embeddings",
-  True,
-  "Whether to use position embeddings as signals for edge order."
-  "We expect them to be part of the ds anyway, but you can toggle off their effect.",
-)
+app.DEFINE_boolean("use_propagation_attention", False, "")
+classifier_base.MODEL_FLAGS.add("use_propagation_attention")
 
 app.DEFINE_boolean("use_edge_bias", False, "")
+classifier_base.MODEL_FLAGS.add("use_edge_bias")
 
 app.DEFINE_boolean(
-  "msg_mean_aggregation",
-  True,
-  "If true, normalize incoming messages by the number of incoming messages.",
-)
+    "use_edge_msg_avg_aggregation", True,
+    "If true, normalize incoming messages by the number of "
+    "incoming messages.")
+classifier_base.MODEL_FLAGS.add("use_edge_msg_avg_aggregation")
+
+app.DEFINE_float("graph_state_dropout_keep_prob", 1.0,
+                 "Graph state dropout keep probability (rate = 1 - keep_prob)")
+classifier_base.MODEL_FLAGS.add("graph_state_dropout_keep_prob")
+
+app.DEFINE_float("edge_weight_dropout_keep_prob", 1.0,
+                 "Edge weight dropout keep probability (rate = 1 - keep_prob)")
+classifier_base.MODEL_FLAGS.add("edge_weight_dropout_keep_prob")
+
 app.DEFINE_float(
-  "graph_state_dropout", 0.0, "Graph state dropout rate.",
-)
+    "output_layer_dropout_keep_prob", 1.0,
+    "Dropout keep probability on the output layer. In range 0 < x <= 1.")
+classifier_base.MODEL_FLAGS.add("output_layer_dropout_keep_prob")
+
 app.DEFINE_float(
-  "edge_weight_dropout", 0.0, "Edge weight dropout rate.",
-)
-app.DEFINE_float(
-  "output_layer_dropout", 0.0, "Dropout rate on the output layer.",
-)
-app.DEFINE_float(
-  "intermediate_loss_weight",
-  0.2,
-  "The actual loss is computed as loss + factor * intermediate_loss",
-)
+    "intermediate_loss_discount_factor", 0.2,
+    "The actual loss is computed as loss + factor * intermediate_loss")
+
 app.DEFINE_integer(
-  "aux_in_layer_size",
-  32,
-  "Size for MLP that combines graph_features and aux_in features",
+    "auxiliary_inputs_dense_layer_size", 32,
+    "Size for MLP that combines graph_x and GGNN output features")
+classifier_base.MODEL_FLAGS.add("auxiliary_inputs_dense_layer_size")
+
+GGNNWeights = collections.namedtuple(
+    "GGNNWeights",
+    [
+        "edge_weights",
+        "edge_biases",
+        "edge_type_attention_weights",
+        "rnn_cells",
+    ],
 )
-app.DEFINE_boolean(
-  "log1p_graph_x",
-  True,
-  "If set, apply a log(x + 1) transformation to incoming graph-level features.",
-)
-
-####### DEBBUGING HELPERS ##########################
-DEBUG = False
 
 
-def assert_no_nan(tensor_list):
-  for i, t in enumerate(tensor_list):
-    assert not torch.isnan(t).any(), f"{i}: {tensor_list}"
+class GgnnClassifierModel(ggnn.GgnnBaseModel):
+  """GGNN model for node-level or graph-level classification."""
 
-
-def nan_hook(self, inp, output):
-  """Checks return values of any forward() function for NaN"""
-  if not isinstance(output, tuple):
-    outputs = [output]
-  else:
-    outputs = output
-
-  for i, out in enumerate(outputs):
-    nan_mask = torch.isnan(out)
-    if nan_mask.any():
-      print("In", self.__class__.__name__)
-      raise RuntimeError(
-        f"Found NAN in output {i} at indices: ",
-        nan_mask.nonzero(),
-        "where:",
-        out[nan_mask.nonzero()[:, 0].unique(sorted=True)],
-      )
-
-
-##########################################
-
-
-class GgnnBatchData(NamedTuple):
-  """The model-specific data generated for a batch."""
-
-  # A combination of one or more graphs into a single disconnected graph.
-  disjoint_graph: graph_tuple.GraphTuple
-  # A list of graphs that were used to construct the disjoint graph.
-  graphs: List[graph_tuple_database.GraphTuple]
-
-
-class Ggnn(classifier_base.ClassifierBase):
-  """A gated graph neural network."""
-
-  def __init__(self, *args, **kwargs):
-    """Constructor."""
-    super(Ggnn, self).__init__(*args, **kwargs)
-
-    # set some global config values
-    self.dev = (
-      torch.device("cuda")
-      if torch.cuda.is_available() and FLAGS.cuda
-      else torch.device("cpu")
-    )
+  def MakeLossAndAccuracyAndPredictionOps(
+      self) -> typing.Tuple[tf.Tensor, tf.Tensor, tf.Tensor, tf.Tensor]:
+    layer_timesteps = np.array([int(x) for x in FLAGS.layer_timesteps])
     app.Log(
-      1, "Using device %s with dtype %s", self.dev, torch.get_default_dtype()
-    )
+        1, "Using layer timesteps: %s for a total of %s message passing "
+        "steps", layer_timesteps, self.message_passing_step_count)
 
-    # Instantiate model
-    config = GGNNConfig(
-      num_classes=self.y_dimensionality,
-      has_graph_labels=self.graph_db.graph_y_dimensionality > 0,
-    )
+    # Generate per-layer values for edge weights, biases and gated units:
+    self.weights = {}  # Used by super-class to place generic things
+    self.gnn_weights = GGNNWeights([], [], [], [])
+    for layer_index in range(len(self.layer_timesteps)):
+      with tf.compat.v1.variable_scope(f"gnn_layer_{layer_index}"):
+        edge_weights = tf.reshape(
+            tf.Variable(
+                utils.glorot_init([
+                    self.stats.edge_type_count * FLAGS.hidden_size,
+                    FLAGS.hidden_size
+                ]),
+                name=f"gnn_edge_weights_{layer_index}",
+            ),
+            [self.stats.edge_type_count, FLAGS.hidden_size, FLAGS.hidden_size])
+        # Add dropout as required.
+        if FLAGS.edge_weight_dropout_keep_prob < 1.0:
+          edge_weights = tf.nn.dropout(
+              edge_weights,
+              rate=1 - self.placeholders["edge_weight_dropout_keep_prob"])
+        self.gnn_weights.edge_weights.append(edge_weights)
 
-    inst2vec_embeddings = node_encoder.GraphNodeEncoder().embeddings_tables[0]
-    inst2vec_embeddings = torch.from_numpy(
-      np.array(inst2vec_embeddings, dtype=np.float32)
-    )
-    self.model = GGNNModel(
-      config,
-      pretrained_embeddings=inst2vec_embeddings,
-      test_only=FLAGS.test_only,
-    )
+        if FLAGS.use_propagation_attention:
+          self.gnn_weights.edge_type_attention_weights.append(
+              tf.Variable(
+                  np.ones([self.stats.edge_type_count], dtype=np.float32),
+                  name=f"edge_type_attention_weights_{layer_index}",
+              ))
 
-    if DEBUG:
-      for submodule in self.model.modules():
-        submodule.register_forward_hook(nan_hook)
+        if FLAGS.use_edge_bias:
+          self.gnn_weights.edge_biases.append(
+              tf.Variable(
+                  np.zeros([self.stats.edge_type_count, FLAGS.hidden_size],
+                           dtype=np.float32),
+                  name="gnn_edge_biases_%i" % layer_index,
+              ))
 
-    self.model.to(self.dev)
+        cell = utils.BuildRnnCell(FLAGS.graph_rnn_cell,
+                                  FLAGS.graph_rnn_activation,
+                                  FLAGS.hidden_size,
+                                  name=f"cell_layer_{layer_index}")
+        # Apply dropout as required.
+        if FLAGS.graph_state_dropout_keep_prob < 1:
+          cell = tf.compat.v1.nn.rnn_cell.DropoutWrapper(
+              cell,
+              state_keep_prob=self.placeholders["graph_state_dropout_keep_prob"]
+          )
+        self.gnn_weights.rnn_cells.append(cell)
 
-  def MakeBatch(
-    self,
-    epoch_type: epoch.Type,
-    graphs: Iterable[graph_tuple_database.GraphTuple],
-    ctx: progress.ProgressContext = progress.NullContext,
-  ) -> batches.Data:
-    """Create a mini-batch of data from an iterator of graphs.
+    with tf.compat.v1.variable_scope("embeddings"):
+      self.weights['node_embeddings'] = (
+          self._GetEmbeddingsAsTensorflowVariable())
+    encoded_node_x = tf.nn.embedding_lookup(self.weights['node_embeddings'],
+                                            ids=self.placeholders['node_x'])
 
-    Returns:
-      A single batch of data for feeding into RunBatch(). A batch consists of a
-      list of graph IDs and a model-defined blob of data. If the list of graph
-      IDs is empty, the batch is discarded and not fed into RunBatch().
-    """
-    # TODO(github.com/ChrisCummins/ProGraML/issues/24): The new graph batcher
-    # implementation is not well suited for reading the graph IDs, hence this
-    # somewhat clumsy iterator wrapper. A neater approach would be to create
-    # a graph batcher which returns a list of graphs in the batch.
-    class GraphIterator(object):
-      """A wrapper around a graph iterator which records graph IDs."""
+    # Initial node states and then one entry per layer
+    # (final state of that layer), shape: number of nodes
+    # in batch v x D.
+    node_states_per_layer = [encoded_node_x]
 
-      def __init__(self, graphs: Iterable[graph_tuple_database.GraphTuple]):
-        self.input_graphs = graphs
-        self.graphs_read: List[graph_tuple_database.GraphTuple] = []
+    # Number of nodes in batch.
+    num_nodes_in_batch = self.placeholders['node_count']
 
-      def __iter__(self):
-        return self
+    message_targets = []  # List of tensors of message targets of shape [E]
+    message_edge_types = []  # List of tensors of edge type of shape [E]
 
-      def __next__(self):
-        graph: graph_tuple_database.GraphTuple = next(self.input_graphs)
-        self.graphs_read.append(graph)
-        return graph.tuple
+    for edge_type, adjacency_list in enumerate(
+        self.placeholders["adjacency_lists"]):
+      edge_targets = adjacency_list[:, 1]
+      message_targets.append(edge_targets)
+      message_edge_types.append(
+          tf.ones_like(edge_targets, dtype=tf.int32) * edge_type)
 
-    graph_iterator = GraphIterator(graphs)
+    message_targets = tf.concat(message_targets, axis=0,
+                                name='message_targets')  # Shape [M]
+    message_edge_types = tf.concat(message_edge_types,
+                                   axis=0,
+                                   name='message_edge_types')  # Shape [M]
 
-    # Create a disjoint graph out of one or more input graphs.
-    batcher = graph_batcher.GraphBatcher.CreateFromFlags(
-      graph_iterator, ctx=ctx
-    )
+    for (layer_idx, num_timesteps) in enumerate(self.layer_timesteps):
+      with tf.compat.v1.variable_scope(f"gnn_layer_{layer_idx}"):
+        # Used shape abbreviations:
+        #   V ~ number of nodes
+        #   D ~ state dimension
+        #   E ~ number of edges of current type
+        #   M ~ number of messages (sum of all E)
 
-    try:
-      disjoint_graph = next(batcher)
-    except StopIteration:
-      # We have run out of graphs.
-      return batches.EndOfBatches()
+        if FLAGS.use_propagation_attention:
+          message_edge_type_factors = tf.nn.embedding_lookup(
+              params=self.gnn_weights.edge_type_attention_weights[layer_idx],
+              ids=message_edge_types,
+          )  # Shape [M]
 
-    # Workaround for the fact that graph batcher may read one more graph than
-    # actually gets included in the batch.
-    if batcher.last_graph:
-      graphs = graph_iterator.graphs_read[:-1]
+        # Record new states for this layer. Initialised to last state, but will
+        # be updated below:
+        node_states_per_layer.append(node_states_per_layer[-1])
+        for step in range(num_timesteps):
+          with tf.compat.v1.variable_scope(f"timestep_{step}"):
+            # list of tensors of messages of shape [E, D]
+            messages = []
+            # list of tensors of edge source states of shape [E, D]
+            message_source_states = []
+
+            # Collect incoming messages per edge type
+            for edge_type, adjacency_list in enumerate(
+                self.placeholders["adjacency_lists"]):
+              edge_sources = adjacency_list[:, 0]
+              edge_source_states = tf.nn.embedding_lookup(
+                  params=node_states_per_layer[-1],
+                  ids=edge_sources)  # Shape [E, D]
+
+              # Message propagation.
+              all_messages_for_edge_type = tf.matmul(
+                  edge_source_states,
+                  self.gnn_weights.edge_weights[layer_idx][edge_type],
+              )  # Shape [E, D]
+              messages.append(all_messages_for_edge_type)
+              message_source_states.append(edge_source_states)
+
+            messages = tf.concat(messages, axis=0)  # Shape [M, D]
+
+            # TODO: not well understood
+            if FLAGS.use_propagation_attention:
+              message_source_states = tf.concat(message_source_states,
+                                                axis=0)  # Shape [M, D]
+              message_target_states = tf.nn.embedding_lookup(
+                  params=node_states_per_layer[-1],
+                  ids=message_targets)  # Shape [M, D]
+              message_attention_scores = tf.einsum(
+                  "mi,mi->m", message_source_states,
+                  message_target_states)  # Shape [M]
+              message_attention_scores = (message_attention_scores *
+                                          message_edge_type_factors)
+
+              # The following is softmax-ing over the incoming messages per
+              # node. As the number of incoming varies, we can't just use
+              # tf.softmax. Reimplement with logsumexp trick:
+              # Step (1): Obtain shift constant as max of messages going into
+              # a node.
+              message_attention_score_max_per_target = tf.unsorted_segment_max(
+                  data=message_attention_scores,
+                  segment_ids=message_targets,
+                  num_segments=num_nodes_in_batch,
+              )  # Shape [V]
+              # Step (2): Distribute max out to the corresponding messages
+              # again, and shift scores:
+              message_attention_score_max_per_message = tf.gather(
+                  params=message_attention_score_max_per_target,
+                  indices=message_targets,
+              )  # Shape [M]
+              message_attention_scores -= (
+                  message_attention_score_max_per_message)
+              # Step (3): Exp, sum up per target, compute exp(score) / exp(sum)
+              # as attention prob:
+              message_attention_scores_exped = tf.exp(
+                  message_attention_scores)  # Shape [M]
+              message_attention_score_sum_per_target = tf.unsorted_segment_sum(
+                  data=message_attention_scores_exped,
+                  segment_ids=message_targets,
+                  num_segments=num_nodes_in_batch,
+              )  # Shape [V]
+              message_attention_normalisation_sum_per_message = tf.gather(
+                  params=message_attention_score_sum_per_target,
+                  indices=message_targets,
+              )  # Shape [M]
+              message_attention = message_attention_scores_exped / (
+                  message_attention_normalisation_sum_per_message +
+                  utils.SMALL_NUMBER)  # Shape [M]
+              # Step (4): Weigh messages using the attention prob:
+              messages = messages * tf.expand_dims(message_attention, -1)
+
+            incoming_messages = tf.unsorted_segment_sum(
+                data=messages,
+                segment_ids=message_targets,
+                num_segments=num_nodes_in_batch,
+            )  # Shape [V, D]
+
+            if FLAGS.use_edge_bias:
+              incoming_messages += tf.matmul(
+                  self.placeholders["incoming_edge_counts"],
+                  self.gnn_weights.edge_biases[layer_idx],
+              )  # Shape [V, D]
+
+            if FLAGS.use_edge_msg_avg_aggregation:
+              num_incoming_edges = tf.reduce_sum(
+                  self.placeholders["incoming_edge_counts"],
+                  keepdims=True,
+                  axis=-1,
+              )  # Shape [V, 1]
+              incoming_messages /= num_incoming_edges + utils.SMALL_NUMBER
+
+            # Shape [V, D]
+            incoming_information = tf.concat([incoming_messages], axis=-1)
+
+            # pass updated vertex features into RNN cell, shape [V, D].
+            node_states_per_layer[-1] = self.gnn_weights.rnn_cells[layer_idx](
+                incoming_information, node_states_per_layer[-1])[1]
+
+    self.ops["final_node_x"] = node_states_per_layer[-1]
+
+    if FLAGS.output_layer_dropout_keep_prob < 1:
+      out_layer_dropout = self.placeholders["output_layer_dropout_keep_prob"]
     else:
-      graphs = graph_iterator.graphs_read
+      out_layer_dropout = None
 
-    # Discard single-graph batches during training when there are graph
-    # features. This is because we use batch normalization on incoming features,
-    # and batch normalization requires > 1 items to normalize.
-    if (len(graphs) <= 1 and epoch_type == epoch.Type.TRAIN and
-        disjoint_graph.graph_x_dimensionality):
-      return batches.EmptyBatch()
+    labels_dimensionality = (self.stats.node_labels_dimensionality or
+                             self.stats.graph_labels_dimensionality)
+    predictions, regression_gate, regression_transform = utils.MakeOutputLayer(
+        initial_node_state=node_states_per_layer[0],
+        final_node_state=self.ops["final_node_x"],
+        hidden_size=FLAGS.hidden_size,
+        labels_dimensionality=labels_dimensionality,
+        dropout_keep_prob_placeholder=out_layer_dropout)
+    self.weights['regression_gate'] = regression_gate
+    self.weights['regression_transform'] = regression_transform
 
-    return batches.Data(
-      graph_ids=[graph.id for graph in graphs],
-      data=GgnnBatchData(disjoint_graph=disjoint_graph, graphs=graphs),
-    )
+    if self.stats.graph_features_dimensionality:
+      # Sum node representations across graph (per graph).
+      computed_graph_only_values = tf.unsorted_segment_sum(
+          predictions,
+          segment_ids=self.placeholders["graph_nodes_list"],
+          num_segments=self.placeholders["graph_count"],
+          name='computed_graph_only_values',
+      )  # [g, c]
 
-  def GraphReader(
-    self,
-    epoch_type: epoch.Type,
-    graph_db: graph_tuple_database.Database,
-    filters: Optional[List[Callable[[], bool]]] = None,
-    limit: Optional[int] = None,
-    ctx: progress.ProgressContext = progress.NullContext,
-  ) -> graph_database_reader.BufferedGraphReader:
-    """Construct a buffered graph reader.
+      # Add global features to the graph readout.
+      x = tf.concat([
+          computed_graph_only_values,
+          tf.cast(self.placeholders["graph_x"], tf.float32)
+      ],
+                    axis=-1)
+      x = tf.layers.batch_normalization(
+          x, training=self.placeholders['is_training'])
+      x = tf.layers.dense(x,
+                          FLAGS.auxiliary_inputs_dense_layer_size,
+                          activation=tf.nn.relu)
+      x = tf.layers.dropout(
+          x,
+          rate=1 - self.placeholders["output_layer_dropout_keep_prob"],
+          training=self.placeholders['is_training'])
+      predictions = tf.layers.dense(x, 2)
 
-    Args:
-      epoch_type: The type of graph reader to return a graph reader for.
-      graph_db: The graph database to read graphs from.
-      filters: A list of filters to impose on the graph database reader.
-      limit: The maximum number of rows to read.
-      ctx: A logging context.
-
-    Returns:
-      A buffered graph reader instance.
-    """
-    filters = filters or []
-
-    # Only read graphs with data_flow_steps <= message_passing_step_count if
-    # --limit_max_data_flow_steps_during_training is set and we are not
-    # in a test epoch.
-    if (
-      FLAGS.limit_max_data_flow_steps_during_training
-      and self.graph_db.has_data_flow
-      and (epoch_type == epoch.Type.TRAIN or epoch_type == epoch.Type.VAL)
-    ):
-      filters.append(
-        lambda: graph_tuple_database.GraphTuple.data_flow_steps
-        <= self.message_passing_step_count
-      )
-
-    return super(Ggnn, self).GraphReader(
-      epoch_type=epoch_type,
-      graph_db=graph_db,
-      filters=filters,
-      limit=limit,
-      ctx=ctx,
-    )
-
-  @property
-  def message_passing_step_count(self) -> int:
-    return self.layer_timesteps.sum()
-
-  @property
-  def layer_timesteps(self) -> np.array:
-    return np.array([int(x) for x in FLAGS.layer_timesteps])
-
-  # TODO(github.com/ChrisCummins/ProGraML/issues/27): Split this into a separate
-  # unroll_strategy.py module.
-  def GetUnrollFactor(
-    self,
-    epoch_type: epoch.Type,
-    batch: batches.Data,
-    unroll_strategy: str,
-    unroll_factor: float,
-  ) -> int:
-    """Determine the unroll factor from the --unroll_strategy and --unroll_factor
-  flags, and the batch log.
-  """
-    # Determine the unrolling strategy.
-    if unroll_strategy == "none" or epoch_type == epoch.Type.TRAIN:
-      # Perform no unrolling. The inputs are processed for a single run of
-      # message_passing_step_count. This is required during training to
-      # propagate gradients.
-      return 1
-    elif unroll_strategy == "constant":
-      # Unroll by a constant number of steps. The total number of steps is
-      # (unroll_factor * message_passing_step_count).
-      return int(unroll_factor)
-    elif unroll_strategy == "data_flow_max_steps":
-      max_data_flow_steps = max(
-        graph.data_flow_steps for graph in batch.data.disjoint_graphs
-      )
-      unroll_factor = math.ceil(
-        max_data_flow_steps / self.message_passing_step_count
-      )
-      app.Log(
-        2,
-        "Determined unroll factor %d from max data flow steps %d",
-        unroll_factor,
-        max_data_flow_steps,
-      )
-      return unroll_factor
-    elif unroll_strategy == "edge_count":
-      max_edge_count = max(graph.edge_count for graph in batch.data.graphs)
-      unroll_factor = math.ceil(
-        (max_edge_count * unroll_factor) / self.message_passing_step_count
-      )
-      app.Log(
-        2,
-        "Determined unroll factor %d from max edge count %d",
-        unroll_factor,
-        self.message_passing_step_count,
-      )
-      return unroll_factor
-    elif unroll_strategy == "label_convergence":
-      return 0
+    if self.stats.graph_labels_dimensionality:
+      targets = tf.argmax(self.placeholders["graph_y"],
+                          axis=1,
+                          output_type=tf.int32,
+                          name="targets")
+    elif self.stats.node_labels_dimensionality:
+      targets = tf.argmax(self.placeholders["node_y"],
+                          axis=1,
+                          output_type=tf.int32)
     else:
-      raise app.UsageError(f"Unknown unroll strategy '{unroll_strategy}'")
+      raise ValueError("No graph labels and no node labels!")
 
-  def RunBatch(
-    self,
-    epoch_type: epoch.Type,
-    batch: batches.Data,
-    ctx: progress.ProgressContext = progress.NullContext,
-  ) -> batches.Results:
-    disjoint_graph: graph_tuple.GraphTuple = batch.data.disjoint_graph
+    argmaxed_predictions = tf.argmax(predictions, axis=1, output_type=tf.int32)
+    accuracies = tf.equal(argmaxed_predictions, targets)
 
-    # Batch to model-inputs
-    # torch.from_numpy() shares memory with numpy!
-    # TODO(github.com/ChrisCummins/ProGraML/issues/27): maybe we can save
-    # memory copies in the training loop if we can turn the data into the
-    # required types (np.int64 and np.float32) once they come off the network
-    # from the database, where smaller i/o size (int32) is more important.
-    with ctx.Profile(5, "Sent data to GPU"):
-      vocab_ids = torch.from_numpy(disjoint_graph.node_x[:, 0]).to(
-        self.dev, torch.long
-      )
-      selector_ids = torch.from_numpy(disjoint_graph.node_x[:, 1]).to(
-        self.dev, torch.long
-      )
-      # we need those as a result on cpu and can save device i/o
-      cpu_labels = (
-        disjoint_graph.node_y
-        if disjoint_graph.has_node_y
-        else disjoint_graph.graph_y
-      )
-      labels = torch.from_numpy(cpu_labels).to(self.dev)
-      edge_lists = [
-        torch.from_numpy(x).to(self.dev, torch.long)
-        for x in disjoint_graph.adjacencies
-      ]
+    accuracy = tf.reduce_mean(tf.cast(accuracies, tf.float32))
 
-      edge_positions = [
-        torch.from_numpy(x).to(self.dev, torch.long)
-        for x in disjoint_graph.edge_positions
-      ]
+    if self.stats.graph_labels_dimensionality:
+      graph_only_loss = tf.losses.softmax_cross_entropy(
+          self.placeholders["graph_y"], computed_graph_only_values)
+      _loss = tf.losses.softmax_cross_entropy(self.placeholders["graph_y"],
+                                              predictions)
+      loss = _loss + FLAGS.intermediate_loss_discount_factor * graph_only_loss
+    elif self.stats.node_labels_dimensionality:
+      loss = tf.losses.softmax_cross_entropy(self.placeholders["node_y"],
+                                             predictions)
+    else:
+      raise ValueError("No graph labels and no node labels!")
 
-    model_inputs = (vocab_ids, selector_ids, labels, edge_lists, edge_positions)
+    return loss, accuracies, accuracy, predictions
 
-    # maybe fetch more inputs.
-    if disjoint_graph.has_graph_y:
-      assert (epoch_type != epoch.Type.TRAIN or disjoint_graph.disjoint_graph_count > 1), f"graph_count is {disjoint_graph.disjoint_graph_count}"
-      num_graphs = torch.tensor(disjoint_graph.disjoint_graph_count).to(
-        self.dev, torch.long
-      )
-      graph_nodes_list = torch.from_numpy(
-        disjoint_graph.disjoint_nodes_list
-      ).to(self.dev, torch.long)
+  def MakeMinibatchIterator(
+      self, epoch_type: str, group: str
+  ) -> typing.Iterable[typing.Tuple[log_database.BatchLogMeta, ggnn.FeedDict]]:
+    """Create mini-batches by flattening adjacency matrices into a single
+    adjacency matrix with multiple disconnected components."""
+    options = graph_batcher.GraphBatchOptions(
+        max_nodes=FLAGS.batch_size,
+        group=group,
+        data_flow_max_steps_required=(None if epoch_type == 'test' else
+                                      self.message_passing_step_count))
+    max_instance_count = (
+        FLAGS.max_train_per_epoch if epoch_type == 'train' else
+        FLAGS.max_val_per_epoch if epoch_type == 'val' else None)
+    for batch in self.batcher.MakeGraphBatchIterator(options,
+                                                     max_instance_count):
+      # Pad node feature vector of size <= hidden_size up to hidden_size so
+      # that the size matches embedding dimensionality.
+      # batch['node_x'] = np.pad(
+      #     batch["node_x"],
+      #     ((0, 0),
+      #      (0, FLAGS.hidden_size - self.stats.node_features_dimensionality)),
+      #     "constant",
+      # )
 
-      aux_in = torch.from_numpy(disjoint_graph.graph_x).to(
-        self.dev, torch.get_default_dtype()
-      )
+      feed_dict = utils.BatchDictToFeedDict(batch, self.placeholders)
 
-      model_inputs = model_inputs + (num_graphs, graph_nodes_list, aux_in,)
+      if epoch_type == "train":
+        feed_dict.update({
+            self.placeholders["graph_state_dropout_keep_prob"]:
+            FLAGS.graph_state_dropout_keep_prob,
+            self.placeholders["edge_weight_dropout_keep_prob"]:
+            FLAGS.edge_weight_dropout_keep_prob,
+            self.placeholders["output_layer_dropout_keep_prob"]:
+            FLAGS.output_layer_dropout_keep_prob,
+            self.placeholders["is_training"]:
+            True,
+        })
+      else:
+        feed_dict.update({
+            self.placeholders["graph_state_dropout_keep_prob"]: 1.0,
+            self.placeholders["edge_weight_dropout_keep_prob"]: 1.0,
+            self.placeholders["output_layer_dropout_keep_prob"]: 1.0,
+            self.placeholders["is_training"]: False,
+        })
+      yield batch.log, feed_dict
 
-    # enter correct mode of model
-    if epoch_type == epoch.Type.TRAIN and not self.model.training:
-      self.model.train()
-    elif self.model.training:
-      self.model.eval()
-      self.model.opt.zero_grad()
+  def MakeModularGraphOps(self):
+    if not (self.weights['regression_gate'] and
+            self.weights['regression_transform']):
+      raise TypeError("MakeModularGraphOps() call before "
+                      "MakeLossAndAccuracyAndPredictionOps()")
 
-    outputs = self.model(*model_inputs)
+    predictions = utils.MakeModularOutputLayer(
+        self.placeholders['node_x'],
+        self.placeholders['raw_node_output_features'],
+        self.weights['regression_gate'], self.weights['regression_transform'])
 
-    logits, accuracy, logits, correct, targets, graph_features = outputs
+    targets = tf.argmax(self.placeholders["node_y"],
+                        axis=1,
+                        output_type=tf.int32)
 
-    loss = self.model.loss((logits, graph_features), targets)
+    accuracies = tf.equal(tf.argmax(predictions, axis=1, output_type=tf.int32),
+                          targets)
 
-    if epoch_type == epoch.Type.TRAIN:
-      loss.backward()
-      # TODO(github.com/ChrisCummins/ProGraML/issues/27):: Clip gradients
-      # (done). NB, pytorch clips by norm of the gradient of the model, while
-      # tf clips by norm of the grad of each tensor separately. Therefore we
-      # change default from 1.0 to 6.0.
-      # TODO(github.com/ChrisCummins/ProGraML/issues/27):: Anyway: Gradients
-      # shouldn't really be clipped if not necessary?
-      if self.model.config.clip_grad_norm > 0.0:
-        nn.utils.clip_grad_norm_(
-          self.model.parameters(), self.model.config.clip_grad_norm
-        )
-      self.model.opt.step()
-      self.model.opt.zero_grad()
+    accuracy = tf.reduce_mean(tf.cast(accuracies, tf.float32))
 
-    # tg = targets.numpy()
-    # tg = np.vstack(((tg + 1) % 2, tg)).T
-    # assert np.all(labels.numpy() == tg), f"labels sanity check failed: labels={labels.numpy()},  tg={tg}"
+    loss = tf.losses.softmax_cross_entropy(self.placeholders["node_y"],
+                                           predictions)
 
-    # TODO(github.com/ChrisCummins/ProGraML/issues/27): Learning rate schedule
-    # will change this value.
-    learning_rate = self.model.config.lr
-
-    # TODO(github.com/ChrisCummins/ProGraML/issues/27): Set these.
-    model_converged = False
-    iteration_count = 1
-
-    loss_value = loss.item()
-    assert not np.isnan(loss_value), loss
-    return batches.Results.Create(
-      targets=cpu_labels,
-      predictions=logits.detach().cpu().numpy(),
-      model_converged=model_converged,
-      learning_rate=learning_rate,
-      iteration_count=iteration_count,
-      loss=loss_value,
-    )
-
-  def GetModelData(self) -> typing.Any:
-    return {
-      "model_state_dict": self.model.state_dict(),
-      "optimizer_state_dict": self.model.opt.state_dict(),
-    }
-
-  def LoadModelData(self, data_to_load: typing.Any) -> None:
-    self.model.load_state_dict(data_to_load["model_state_dict"])
-    # only restore opt if needed. opt should be None o/w.
-    if not FLAGS.test_only:
-      self.model.opt.load_state_dict(data_to_load["optimizer_state_dict"])
+    return loss, accuracies, accuracy, predictions
 
 
 def main():
   """Main entry point."""
-  run.Run(Ggnn)
+  classifier_base.Run(GgnnClassifierModel)
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
   app.Run(main)
