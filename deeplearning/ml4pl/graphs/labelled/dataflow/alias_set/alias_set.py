@@ -65,7 +65,11 @@ def AnnotateAliasSet(
   for _, data in g.nodes(data=True):
     data[x_label] = [data[x_label], 0]
     data[y_label] = false
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/alias_set/alias_set.py
   g.nodes[root_identifier][x_label] = [g.nodes[root_identifier][x_label][0], 1]
+=======
+  g.nodes[root_identifier][x_label] = [g.nodes[root_identifier][x_label], 1]
+>>>>>>> 4b5c49f10... Add alias set support for multiple embeddings.:deeplearning/ml4pl/graphs/labelled/alias_set/alias_set.py
 
   # Mark the nodes in the alias set.
   for pointer in identifiers_in_set:
