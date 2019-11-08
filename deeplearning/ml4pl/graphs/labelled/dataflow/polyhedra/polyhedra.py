@@ -127,6 +127,7 @@ def BytecodeToPollyCanonicalized(source: str) -> str:
     ["-polly-canonicalize", "-S", "-", "-o", "-"], stdin=source
   )
   if process.returncode:
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra.py
     raise opt.OptException(
 <<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra.py
       "Error in canonicalization opt execution (%d)" % process.returncode
@@ -134,6 +135,10 @@ def BytecodeToPollyCanonicalized(source: str) -> str:
 =======
         'Error in canonicalization opt execution (%d)' % process.returncode)
 >>>>>>> edb8c21d9... Automated code format.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
+=======
+    raise opt.OptException('Error in canonicalization opt execution (%d)' %
+                           process.returncode[:120])
+>>>>>>> 085ca75b4... Export fix ups.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
   return process.stdout
 
 
@@ -182,6 +187,7 @@ def AnnotatePolyhedra(
       entities += 1
       if node not in g.nodes:
 <<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra.py
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra.py
         mismatched_entities += 1
         continue
       g.nodes[node][y_label] = true
@@ -198,6 +204,9 @@ def AnnotatePolyhedra(
 =======
         raise ValueError(
             f"Entity `{node}` not found in graph, {g.nodes(data=True)}")
+=======
+        raise ValueError(f"Entity `{node}` not found in graph")
+>>>>>>> 085ca75b4... Export fix ups.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
       g.nodes[node][y_label] = true
 
 
@@ -218,11 +227,17 @@ def MakePolyhedralGraphs(
   Args:
     bytecode: The bytecode which produced the input graph.
     n: The maximum number of graphs to produce. This value is ignored and one graph
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra.py
       will be produced with all polyhedral regions annotated.
     false: TODO(github.com/ChrisCummins/ProGraML/issues/2): Unused. This method
       is hardcoded to use 2-class 1-hots.
     true: TODO(github.com/ChrisCummins/ProGraML/issues/2): Unused. This method
       is hardcoded to use 2-class 1-hots.
+=======
+       will be produced with all polyhedral regions annotated.
+    false: TODO(cec): Unused. This method is hardcoded to use 2-class 1-hots.
+    true: TODO(cec): Unused. This method is hardcoded to use 2-class 1-hots.
+>>>>>>> 085ca75b4... Export fix ups.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
 
   Returns:
     A generator of annotated graphs, where each graph has 'x' and 'y' labels on
