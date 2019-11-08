@@ -1,4 +1,8 @@
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra_test.py
 """Unit tests for //deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra."""
+=======
+"""Unit tests for //deeplearning/ml4pl/graphs/labelled/polyhedra."""
+>>>>>>> 4fa255743... minor fixes:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra_test.py
 import typing
 
 import networkx as nx

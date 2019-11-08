@@ -9,8 +9,13 @@ py_library(
         "//compilers/llvm:opt_util",
         "//deeplearning/ml4pl/graphs/unlabelled/cdfg:control_and_data_flow_graph",
         "//deeplearning/ml4pl/graphs/unlabelled/cfg:llvm_util",
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/BUILD
         "//labm8/py:app",
         "//labm8/py:decorators",
+=======
+        "//labm8:app",
+        "//labm8:decorators",
+>>>>>>> 4fa255743... minor fixes:deeplearning/ml4pl/graphs/labelled/polyhedra/BUILD
     ],
 )
 
