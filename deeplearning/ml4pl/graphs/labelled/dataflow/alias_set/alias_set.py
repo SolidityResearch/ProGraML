@@ -141,6 +141,7 @@ def MakeAliasSetGraphs(
   if alias_sets_to_delete:
     for function in alias_sets_to_delete:
       del alias_sets_by_function[function]
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/alias_set/alias_set.py
     app.Log(
       2,
       "Removed %d alias sets generated from bytecode but not found in "
@@ -148,6 +149,11 @@ def MakeAliasSetGraphs(
       len(alias_sets_to_delete),
       alias_sets_to_delete,
     )
+=======
+    app.Warning(
+        "Removed %d alias sets generated from bytecode but not found in "
+        "graph: %s", len(alias_sets_to_delete), alias_sets_to_delete)
+>>>>>>> 69425819f... Fix alias set unknown function deletion.:deeplearning/ml4pl/graphs/labelled/alias_set/alias_set.py
 
   function_alias_set_pairs: typing.List[
     typing.Tuple[str, opt_util.AliasSet]
