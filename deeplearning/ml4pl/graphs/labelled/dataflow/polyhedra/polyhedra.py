@@ -22,20 +22,31 @@ import pydot
 
 from compilers.llvm import opt
 from compilers.llvm import opt_util
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra.py
 from deeplearning.ml4pl.graphs.unlabelled.llvm2graph import graph_builder
 from deeplearning.ml4pl.graphs.unlabelled.llvm2graph.cfg import llvm_util
 from labm8.py import app
 from labm8.py import decorators
 
+=======
+from deeplearning.ml4pl.graphs.unlabelled.cdfg import control_and_data_flow_graph as cdfg
+from deeplearning.ml4pl.graphs.unlabelled.cfg import llvm_util
+>>>>>>> edb8c21d9... Automated code format.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
 
 FLAGS = app.FLAGS
 
 
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra.py
 def RecursePydot(
   subgraph: pydot.Dot,
   func: typing.Callable[[pydot.Dot, typing.Any], None],
   state: typing.Any,
 ):
+=======
+def RecursePydot(subgraph: pydot.Dot,
+                 func: typing.Callable[[pydot.Dot, typing.Any], None],
+                 state: typing.Any):
+>>>>>>> edb8c21d9... Automated code format.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
   func(subgraph, state)
   for ss in subgraph.get_subgraphs():
     RecursePydot(ss, func, state)
@@ -64,6 +75,7 @@ class PolyhedralRegionAnnotator(llvm_util.TagHook):
 
   def OnNode(self, node: pydot.Node) -> typing.Dict[str, typing.Any]:
     for region in self.regions.values():
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra.py
       if node.get_name() in [
         str(r)[:-1] for r in region
       ]:  # Need to cut off semicolon
@@ -85,6 +97,24 @@ class PolyhedralRegionAnnotator(llvm_util.TagHook):
     if definition_type == "def":
       if "polyhedral" in stmt_node:
         return {"polyhedral": stmt_node["polyhedral"]}
+=======
+      if node.get_name() in [str(r)[:-1] for r in region
+                            ]:  # Need to cut off semicolon
+        return {'polyhedral': True}
+
+    return {'polyhedral': False}
+
+  def OnInstruction(self, node_attrs: typing.Dict[str, typing.Any],
+                    instruction: str) -> typing.Dict[str, typing.Any]:
+    return {'polyhedral': node_attrs.get('polyhedral', False)}
+
+  def OnIdentifier(self, stmt_node: typing.Dict[str, typing.Any],
+                   identifier_node: typing.Dict[str, typing.Any],
+                   definition_type: str) -> typing.Dict[str, typing.Any]:
+    if definition_type == 'def':
+      if 'polyhedral' in stmt_node:
+        return {'polyhedral': stmt_node['polyhedral']}
+>>>>>>> edb8c21d9... Automated code format.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
 
     # TODO(talbn): Perhaps no need for definition_type == 'use' (may come from outside region)
 
@@ -98,8 +128,12 @@ def BytecodeToPollyCanonicalized(source: str) -> str:
   )
   if process.returncode:
     raise opt.OptException(
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra.py
       "Error in canonicalization opt execution (%d)" % process.returncode
     )
+=======
+        'Error in canonicalization opt execution (%d)' % process.returncode)
+>>>>>>> edb8c21d9... Automated code format.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
   return process.stdout
 
 
@@ -147,6 +181,7 @@ def AnnotatePolyhedra(
 
       entities += 1
       if node not in g.nodes:
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra.py
         mismatched_entities += 1
         continue
       g.nodes[node][y_label] = true
@@ -160,6 +195,13 @@ def AnnotatePolyhedra(
 
 
 @decorators.timeout(seconds=120)
+=======
+        raise ValueError(
+            f"Entity `{node}` not found in graph, {g.nodes(data=True)}")
+      g.nodes[node][y_label] = true
+
+
+>>>>>>> edb8c21d9... Automated code format.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
 def MakePolyhedralGraphs(
   bytecode: str, n: typing.Optional[int] = None, false=False, true=True,
 ) -> typing.Iterable[nx.MultiDiGraph]:
@@ -195,6 +237,7 @@ def MakePolyhedralGraphs(
   g = CreateCDFG(bytecode)
 
   # Build the polyhedral building blocks
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra.py
   scop_graphs, _ = opt_util.DotGraphsFromBytecode(
     bytecode,
     [
@@ -205,6 +248,12 @@ def MakePolyhedralGraphs(
       "-polly-optimizer=none",
     ],
   )
+=======
+  scop_graphs, _ = opt_util.DotGraphsFromBytecode(bytecode, [
+      '-O1', '-polly-process-unprofitable', '-polly-optimized-scops',
+      '-polly-dot', '-polly-optimizer=none'
+  ])
+>>>>>>> edb8c21d9... Automated code format.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
 
   # Loop over each function
   max_steps = 0
@@ -216,11 +265,16 @@ def MakePolyhedralGraphs(
     builder = graph_builder.ProGraMLGraphBuilder()
     annotated_cdfg = builder.BuildFromControlFlowGraph(cfg)
 
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra.py
     steps = sum(
       1
       for nid, node in annotated_cdfg.nodes(data=True)
       if node.get("polyhedral")
     )
+=======
+    steps = sum(1 for nid, node in annotated_cdfg.nodes(data=True)
+                if node.get('polyhedral'))
+>>>>>>> edb8c21d9... Automated code format.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
     max_steps = max(max_steps, steps)
     cdfgs.append(annotated_cdfg)
 
