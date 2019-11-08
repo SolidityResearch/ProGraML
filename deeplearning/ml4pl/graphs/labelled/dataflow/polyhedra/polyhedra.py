@@ -203,7 +203,14 @@ def AnnotatePolyhedra(
 
 >>>>>>> edb8c21d9... Automated code format.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
 def MakePolyhedralGraphs(
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra.py
   bytecode: str, n: typing.Optional[int] = None, false=False, true=True,
+=======
+    bytecode: str,
+    n: typing.Optional[int] = None,
+    false=False,
+    true=True,
+>>>>>>> 7a1801574... Add support for generating polyhedra datasets.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
 ) -> typing.Iterable[nx.MultiDiGraph]:
   """Create an annotated graph from a bytecode that potentially contains
      polyhedral loops.
