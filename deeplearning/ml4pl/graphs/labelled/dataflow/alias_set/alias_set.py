@@ -21,9 +21,14 @@ import networkx as nx
 import numpy as np
 
 from compilers.llvm import opt_util
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/alias_set/alias_set.py
 from labm8.py import app
 from labm8.py import decorators
 
+=======
+from labm8 import app
+from labm8 import decorators
+>>>>>>> d5cd0e23d... Reduce verbosity of alias_set.:deeplearning/ml4pl/graphs/labelled/alias_set/alias_set.py
 
 FLAGS = app.FLAGS
 
@@ -142,6 +147,7 @@ def MakeAliasSetGraphs(
     for function in alias_sets_to_delete:
       del alias_sets_by_function[function]
 <<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/alias_set/alias_set.py
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/alias_set/alias_set.py
     app.Log(
       2,
       "Removed %d alias sets generated from bytecode but not found in "
@@ -152,6 +158,10 @@ def MakeAliasSetGraphs(
 =======
     app.Warning(
         "Removed %d alias sets generated from bytecode but not found in "
+=======
+    app.Log(
+        2, "Removed %d alias sets generated from bytecode but not found in "
+>>>>>>> d5cd0e23d... Reduce verbosity of alias_set.:deeplearning/ml4pl/graphs/labelled/alias_set/alias_set.py
         "graph: %s", len(alias_sets_to_delete), alias_sets_to_delete)
 >>>>>>> 69425819f... Fix alias set unknown function deletion.:deeplearning/ml4pl/graphs/labelled/alias_set/alias_set.py
 
