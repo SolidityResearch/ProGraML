@@ -64,6 +64,7 @@ def ModelToDataFrame(
   return df
 
 
+<<<<<<< HEAD:labm8/py/pdutil.py
 def RewriteColumn(
   df: pd.DataFrame,
   column: str,
@@ -110,6 +111,18 @@ def FormatDataFrameAsAsciiTable(
     "headers": "keys",
     "tablefmt": "psql",
     "showindex": "always" if index else "never",
+=======
+def RewriteColumn(df: pd.DataFrame, column: str,
+                  rewrite: typing.Callable[[typing.Any], typing.Any]):
+  """Rewrite the values in a column in-place."""
+  df[column] = [rewrite(x) for x in df[column]]
+
+
+def FormatDataFrameAsAsciiTable(df: pd.DataFrame, **tabulate_args):
+  default_args = {
+      'headers': 'keys',
+      'tablefmt': 'psql',
+>>>>>>> 45574a301... Add the tabulate package.:labm8/pdutil.py
   }
   default_args.update(tabulate_args)
   return tabulate.tabulate(df, **default_args)
