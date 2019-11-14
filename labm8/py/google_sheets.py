@@ -65,9 +65,16 @@ class GoogleSheets:
   def ExportDataFrame(worksheet, df: pd.DataFrame, index: bool = True) -> None:
     """Export the given dataframe to a worksheet."""
 
+<<<<<<< HEAD:labm8/py/google_sheets.py
     gspread_dataframe.set_with_dataframe(
       worksheet, df, include_index=index, resize=True
     )
+=======
+    gspread_dataframe.set_with_dataframe(worksheet,
+                                         df,
+                                         include_index=index,
+                                         resize=True)
+>>>>>>> 9249ea260... Resize the google worksheet.:deeplearning/ml4pl/models/eval/google_sheets.py
 
   @classmethod
   def FromFlagsOrDie(cls) -> "GoogleSheets":
