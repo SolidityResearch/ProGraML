@@ -50,7 +50,11 @@ class GoogleSheets:
       sheet = self._connection.open(name)
     except gspread.exceptions.SpreadsheetNotFound:
       sheet = self._connection.create(name)
+<<<<<<< HEAD:labm8/py/google_sheets.py
       sheet.share(share_with_email_address, perm_type="user", role="writer")
+=======
+      sheet.share(share_with_email_address, perm_type='user', role='writer')
+>>>>>>> 930641c89... Only share sheet when it’s created:deeplearning/ml4pl/models/eval/google_sheets.py
     return sheet
 
   @staticmethod
