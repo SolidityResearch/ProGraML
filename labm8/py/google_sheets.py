@@ -9,6 +9,7 @@ from oauth2client import service_account
 
 from labm8.py import app
 
+<<<<<<< HEAD:labm8/py/google_sheets.py
 app.DEFINE_output_path(
   "google_sheets_credentials",
   "/var/phd/google_sheets_credentials.json",
@@ -19,6 +20,12 @@ app.DEFINE_string(
   "chrisc.101@gmail.com",
   "The default email adress to share google sheets with.",
 )
+=======
+app.DEFINE_input_path(
+    'google_sheets_credentials',
+    '/users/zfisches/google_api.json',
+    'The path to a google service account credentials JSON file.')
+>>>>>>> f7121e194... We gotta raise the bar.:deeplearning/ml4pl/models/eval/google_sheets.py
 
 FLAGS = app.FLAGS
 
