@@ -11,6 +11,9 @@ py_library(
     name = "psutil",
 =======
     name = "fuzzywuzzy",
+<<<<<<< HEAD:third_party/py/psutil/BUILD
+>>>>>>> 10d0bba21... Remove the empty python library files.:third_party/py/fuzzywuzzy/BUILD
+=======
 >>>>>>> 10d0bba21... Remove the empty python library files.:third_party/py/fuzzywuzzy/BUILD
     srcs = ["//third_party/py:empty.py"],
     deps = [
