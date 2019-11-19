@@ -23,8 +23,7 @@ app.DEFINE_string(
 =======
 app.DEFINE_input_path(
     'google_sheets_credentials',
-    #'/var/phd/deeplearning/ml4pl/google_sheets_credentials.json',
-    '/users/zfisches/google_api.json',
+    '/var/phd/deeplearning/ml4pl/google_sheets_credentials.json',
     'The path to a google service account credentials JSON file.')
 >>>>>>> f7121e194... We gotta raise the bar.:deeplearning/ml4pl/models/eval/google_sheets.py
 
