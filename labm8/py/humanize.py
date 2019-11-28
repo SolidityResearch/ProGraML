@@ -91,7 +91,7 @@ def Commas(value: Optional[int]):
   return sign + ",".join(reversed(result))
 
 
-def Plural(quantity, singular, plural=None, commas=False):
+def Plural(quantity, singular, plural=None):
   """Formats an integer and a string into a single pluralized string.
 
   Args:
@@ -103,21 +103,10 @@ def Plural(quantity, singular, plural=None, commas=False):
   Returns:
     A string.
   """
-<<<<<<< HEAD
-<<<<<<< HEAD:labm8/py/humanize.py
-=======
->>>>>>> 4242aed2a... Automated code format.
   return "%s %s" % (
     Commas(quantity) if quantity else quantity,
     PluralWord(quantity, singular, plural),
   )
-<<<<<<< HEAD
-=======
-  return '%s %s' % (Commas(quantity) if quantity else quantity,
-                    PluralWord(quantity, singular, plural))
->>>>>>> 750c12b5c... Add a commas option to humanize.Plural().:labm8/humanize.py
-=======
->>>>>>> 4242aed2a... Automated code format.
 
 
 def PluralWord(quantity, singular, plural=None):
@@ -229,10 +218,6 @@ def DecimalPrefix(
     and the unit.
   """
   return _Prefix(
-<<<<<<< HEAD
-<<<<<<< HEAD:labm8/py/humanize.py
-=======
->>>>>>> 4242aed2a... Automated code format.
     quantity,
     unit,
     precision,
@@ -240,29 +225,10 @@ def DecimalPrefix(
     DecimalScale,
     min_scale=min_scale,
     max_scale=max_scale,
-<<<<<<< HEAD
   )
 
 
 def BinaryPrefix(quantity, unit, precision=1, separator=" "):
-=======
-      quantity,
-      unit,
-      precision,
-      DecimalScale,
-      min_scale=min_scale,
-      max_scale=max_scale,
-  )
-
-
-def BinaryPrefix(quantity, unit, precision=1):
->>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/humanize.py
-=======
-  )
-
-
-def BinaryPrefix(quantity, unit, precision=1, separator=" "):
->>>>>>> 4242aed2a... Automated code format.
   """Formats an integer and a unit into a string, using binary prefixes.
 
   The unit will be prefixed with an appropriate multiplier such that
@@ -315,19 +281,8 @@ def _Prefix(quantity, unit, precision, separator, scale_callable, **args):
   if scaled_unit:
     separator = " "
 
-<<<<<<< HEAD
-<<<<<<< HEAD:labm8/py/humanize.py
   print_pattern = "%%.%df%%s%%s" % max(
     0, (precision - int(math.log(abs(scaled_quantity), 10)) - 1),
-=======
-  print_pattern = '%%.%df%%s%%s' % max(
-      0,
-      (precision - int(math.log(abs(scaled_quantity), 10)) - 1),
->>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/humanize.py
-=======
-  print_pattern = "%%.%df%%s%%s" % max(
-    0, (precision - int(math.log(abs(scaled_quantity), 10)) - 1),
->>>>>>> 4242aed2a... Automated code format.
   )
 
   return print_pattern % (scaled_quantity, separator, scaled_unit)
@@ -335,10 +290,6 @@ def _Prefix(quantity, unit, precision, separator, scale_callable, **args):
 
 # Prefixes and corresponding min_scale and max_scale for decimal formating.
 DECIMAL_PREFIXES = (
-<<<<<<< HEAD
-<<<<<<< HEAD:labm8/py/humanize.py
-=======
->>>>>>> 4242aed2a... Automated code format.
   "y",
   "z",
   "a",
@@ -356,28 +307,6 @@ DECIMAL_PREFIXES = (
   "E",
   "Z",
   "Y",
-<<<<<<< HEAD
-=======
-    'y',
-    'z',
-    'a',
-    'f',
-    'p',
-    'n',
-    u'µ',
-    'm',
-    '',
-    'k',
-    'M',
-    'G',
-    'T',
-    'P',
-    'E',
-    'Z',
-    'Y',
->>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/humanize.py
-=======
->>>>>>> 4242aed2a... Automated code format.
 )
 DECIMAL_MIN_SCALE = -8
 DECIMAL_MAX_SCALE = 8
@@ -423,18 +352,7 @@ def BinaryScale(quantity, unit):
     units (string).
   """
   return _Scale(
-<<<<<<< HEAD
-<<<<<<< HEAD:labm8/py/humanize.py
     quantity, unit, 1024, ("Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi"),
-=======
-      quantity,
-      unit,
-      1024,
-      ('Ki', 'Mi', 'Gi', 'Ti', 'Pi', 'Ei', 'Zi', 'Yi'),
->>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/humanize.py
-=======
-    quantity, unit, 1024, ("Ki", "Mi", "Gi", "Ti", "Pi", "Ei", "Zi", "Yi"),
->>>>>>> 4242aed2a... Automated code format.
   )
 
 
