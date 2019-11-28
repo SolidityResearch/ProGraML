@@ -77,6 +77,9 @@ void A(double alpha, double beta, double C[1000][1100], double A[1000][1200], do
 
   # Computed by polly separately.
 <<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra_test.py
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra_test.py
+=======
+>>>>>>> 4242aed2a... Automated code format.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra_test.py
   polyhedral_identifiers = [f"%{i}" for i in range(6, 37)]
 
 =======
@@ -96,6 +99,7 @@ void A(double alpha, double beta, double C[1000][1100], double A[1000][1200], do
         raise ValueError("Identifier is not polyhedral: " + str(data))
 
       assert np.array_equal(data["y"], [0, 1])
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra_test.py
 
 
 if __name__ == "__main__":
@@ -109,4 +113,9 @@ if __name__ == "__main__":
 
 if __name__ == '__main__':
 >>>>>>> 0660f3e93... Fix inconsistency between input CDFG and polly-canonicalized output:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra_test.py
+=======
+
+
+if __name__ == "__main__":
+>>>>>>> 4242aed2a... Automated code format.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra_test.py
   test.Main()

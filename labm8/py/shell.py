@@ -17,9 +17,12 @@ import os
 
 class ShellEscapeCodes(object):
   """Shell escape codes for pretty-printing."""
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/shell.py
 <<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/shell.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
 =======
 >>>>>>> 4242aed2a... Automated code format.
 
@@ -33,6 +36,7 @@ class ShellEscapeCodes(object):
   BOLD = "\033[1m"
   UNDERLINE = "\033[4m"
   END = "\033[0m"
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 =======
@@ -53,6 +57,8 @@ class ShellEscapeCodes(object):
 >>>>>>> 4242aed2a... Automated code format.
 =======
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/shell.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
 
 
 def ShellEscapeList(words):

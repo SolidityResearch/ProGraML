@@ -56,7 +56,10 @@ FLAGS = app.FLAGS
 # https://github.com/abseil/abseil-py/blob/e69e200f680a20c50e0e2cd9e74e9850ff69b856/absl/logging/__init__.py#L554-L583
 ABSL_LOGGING_LINE_RE = re.compile(
 <<<<<<< HEAD
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/logutil.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
 =======
 >>>>>>> 4242aed2a... Automated code format.
   r"(?P<lvl>[IWEF])(?P<timestamp>\d\d\d\d \d\d:\d\d:\d\d.\d\d\d\d\d\d) "
@@ -64,11 +67,14 @@ ABSL_LOGGING_LINE_RE = re.compile(
   r"(?P<contents>.*)",
 )
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
     r'(?P<lvl>[IWEF])(?P<timestamp>\d\d\d\d \d\d:\d\d:\d\d.\d\d\d\d\d\d) '
     r'(?P<thread_id>\d+) (?P<filename>[^:]+):(?P<lineno>\d+)] '
     r'(?P<contents>.*)',)
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/logutil.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
 =======
 >>>>>>> 4242aed2a... Automated code format.
 
@@ -85,12 +91,16 @@ ABSL_LEVEL_TO_LOG_RECORD_LEVEL = {
 
 def DatetimeFromAbslTimestamp(
 <<<<<<< HEAD
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/logutil.py
   timestamp: str, year: int = datetime.datetime.utcnow().year,
 =======
     timestamp: str,
     year: int = datetime.datetime.utcnow().year,
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/logutil.py
+=======
+  timestamp: str, year: int = datetime.datetime.utcnow().year,
+>>>>>>> 4242aed2a... Automated code format.
 =======
   timestamp: str, year: int = datetime.datetime.utcnow().year,
 >>>>>>> 4242aed2a... Automated code format.
@@ -114,12 +124,16 @@ def DatetimeFromAbslTimestamp(
 
 def ConertAbslLogToProtos(
 <<<<<<< HEAD
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/logutil.py
   logs: str, year: int = datetime.datetime.utcnow().year,
 =======
     logs: str,
     year: int = datetime.datetime.utcnow().year,
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/logutil.py
+=======
+  logs: str, year: int = datetime.datetime.utcnow().year,
+>>>>>>> 4242aed2a... Automated code format.
 =======
   logs: str, year: int = datetime.datetime.utcnow().year,
 >>>>>>> 4242aed2a... Automated code format.
@@ -146,11 +160,17 @@ def ConertAbslLogToProtos(
     if starting_match:
       records.append(
 <<<<<<< HEAD
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/logutil.py
         logging_pb2.LogRecord(
           level=ABSL_LEVEL_TO_LOG_RECORD_LEVEL[starting_match.group("lvl")],
           date_utc_epoch_ms=labdate.MillisecondsTimestamp(
 <<<<<<< HEAD:labm8/py/logutil.py
+=======
+        logging_pb2.LogRecord(
+          level=ABSL_LEVEL_TO_LOG_RECORD_LEVEL[starting_match.group("lvl")],
+          date_utc_epoch_ms=labdate.MillisecondsTimestamp(
+>>>>>>> 4242aed2a... Automated code format.
 =======
         logging_pb2.LogRecord(
           level=ABSL_LEVEL_TO_LOG_RECORD_LEVEL[starting_match.group("lvl")],
@@ -170,6 +190,7 @@ def ConertAbslLogToProtos(
       )
 
   for line in logs.split("\n"):
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
               DatetimeFromAbslTimestamp(
@@ -199,6 +220,8 @@ def ConertAbslLogToProtos(
 >>>>>>> 620197b9a... Fix year on logutil.:labm8/logutil.py
 =======
 >>>>>>> 4242aed2a... Automated code format.
+=======
+>>>>>>> 4242aed2a... Automated code format.
     m = ABSL_LOGGING_LINE_RE.match(line)
     if m:
       ConvertOne()
@@ -215,6 +238,7 @@ def ConertAbslLogToProtos(
 
 def StartTeeLogsToFile(
 <<<<<<< HEAD
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/logutil.py
   program_name: str = None,
   log_dir: str = None,
@@ -224,6 +248,11 @@ def StartTeeLogsToFile(
     log_dir: str = None,
     file_log_level: int = logging.DEBUG,
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/logutil.py
+=======
+  program_name: str = None,
+  log_dir: str = None,
+  file_log_level: int = logging.DEBUG,
+>>>>>>> 4242aed2a... Automated code format.
 =======
   program_name: str = None,
   log_dir: str = None,
@@ -261,6 +290,7 @@ def StopTeeLogsToFile():
 @contextlib.contextmanager
 def TeeLogsToFile(
 <<<<<<< HEAD
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/logutil.py
   program_name: str = None,
   log_dir: str = None,
@@ -270,6 +300,11 @@ def TeeLogsToFile(
     log_dir: str = None,
     file_log_level: int = logging.DEBUG,
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/logutil.py
+=======
+  program_name: str = None,
+  log_dir: str = None,
+  file_log_level: int = logging.DEBUG,
+>>>>>>> 4242aed2a... Automated code format.
 =======
   program_name: str = None,
   log_dir: str = None,

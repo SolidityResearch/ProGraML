@@ -42,11 +42,19 @@ class PathParser(absl_flags.ArgumentParser):
   def convert(self, argument: str) -> pathlib.Path:
     """Returns the value of this argument."""
     if not argument:
+<<<<<<< HEAD
       raise absl_app.UsageError("Path flag must be set")
     return pathlib.Path(argument)
 
 
 class DatabaseFlag:
+=======
+      raise TypeError("Path flag must be set")
+    return pathlib.Path(argument)
+
+
+class _Database:
+>>>>>>> 4242aed2a... Automated code format.
   """A parsed database. This is instantiated by DatabaseParser.convert() and
   used to provide a repr()-friendly method for instantiating databases.
 
@@ -68,8 +76,12 @@ class DatabaseFlag:
         f"Failed to construct database {self.database_class.__name__}({self.url}): {e}"
 =======
       raise TypeError(
+<<<<<<< HEAD
           f"Failed to construct database {self.database_class}({self.url}): {e}"
 >>>>>>> 82fdff9a1... Fix typo.:labm8/internal/flags_parsers.py
+=======
+        f"Failed to construct database {self.database_class}({self.url}): {e}"
+>>>>>>> 4242aed2a... Automated code format.
       )
 
   def __repr__(self):
@@ -97,6 +109,7 @@ class DatabaseParser(absl_flags.ArgumentParser):
     """See base class."""
     return self.convert(argument)
 
+<<<<<<< HEAD
   def convert(self, argument: str) -> DatabaseFlag:
     """Returns the value of this argument."""
     if not argument:
@@ -153,3 +166,10 @@ class EnumParser(absl_flags.ArgumentParser):
     if not argument:
       raise TypeError("Enum flag must be set")
     return EnumFlag(self.enum_class, argument)
+=======
+  def convert(self, argument: str) -> Callable[[], "sqlutil.Database"]:
+    """Returns the value of this argument."""
+    if not argument:
+      raise TypeError("Path flag must be set")
+    return _Database(self.database_class, argument, self.must_exist)
+>>>>>>> 4242aed2a... Automated code format.

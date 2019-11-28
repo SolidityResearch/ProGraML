@@ -30,6 +30,7 @@ class Archive(object):
 
   def __init__(
 <<<<<<< HEAD
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/archive.py
     self,
     path: typing.Union[str, pathlib.Path],
@@ -47,6 +48,11 @@ class Archive(object):
 >>>>>>> 4242aed2a... Automated code format.
 =======
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/archive.py
+=======
+    self,
+    path: typing.Union[str, pathlib.Path],
+    assume_filename: typing.Optional[typing.Union[str, pathlib.Path]] = None,
+>>>>>>> 4242aed2a... Automated code format.
   ):
     """Create an archive.
 
@@ -73,6 +79,7 @@ class Archive(object):
 
     if not suffixes:
       raise UnsupportedArchiveFormat(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/archive.py
 <<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/archive.py
@@ -89,9 +96,14 @@ class Archive(object):
       self._open_function = lambda f: tarfile.open(f, "r:bz2")
 =======
           f"Archive '{path_to_determine_type.name}' has no extension",)
+=======
+        f"Archive '{path_to_determine_type.name}' has no extension",
+      )
+>>>>>>> 4242aed2a... Automated code format.
 
-    if suffixes[-1] == '.zip':
+    if suffixes[-1] == ".zip":
       self._open_function = zipfile.ZipFile
+<<<<<<< HEAD
     elif suffixes[-2:] == ['.tar', '.bz2']:
       self._open_function = lambda f: tarfile.open(f, 'r:bz2')
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/archive.py
@@ -128,6 +140,16 @@ class Archive(object):
 >>>>>>> 4242aed2a... Automated code format.
 =======
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/archive.py
+=======
+    elif suffixes[-2:] == [".tar", ".bz2"]:
+      self._open_function = lambda f: tarfile.open(f, "r:bz2")
+      # TODO(cec): Add support for .tar, and .tar.gz.
+    else:
+      raise UnsupportedArchiveFormat(
+        f"Unsupported file extension '{suffixes[-1]}' for archive "
+        f"'{path_to_determine_type.name}'",
+      )
+>>>>>>> 4242aed2a... Automated code format.
 
     # Set in __enter__().
     self._uncompressed_path: typing.Optional[pathlib.Path] = None
@@ -158,11 +180,15 @@ class Archive(object):
     """
     assert not self._uncompressed_path
 <<<<<<< HEAD
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/archive.py
     self._uncompressed_path = pathlib.Path(tempfile.mkdtemp(prefix="phd_"))
 =======
     self._uncompressed_path = pathlib.Path(tempfile.mkdtemp(prefix='phd_'))
 >>>>>>> 0c7d6c0f1... Add ExtractAll() method to Archive.:labm8/archive.py
+=======
+    self._uncompressed_path = pathlib.Path(tempfile.mkdtemp(prefix="phd_"))
+>>>>>>> 4242aed2a... Automated code format.
 =======
     self._uncompressed_path = pathlib.Path(tempfile.mkdtemp(prefix="phd_"))
 >>>>>>> 4242aed2a... Automated code format.

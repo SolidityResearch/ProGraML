@@ -64,12 +64,16 @@ def ModelToDataFrame(
   return df
 
 
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/pdutil.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
 def RewriteColumn(
   df: pd.DataFrame,
   column: str,
   rewrite: typing.Callable[[typing.Any], typing.Any],
 ):
+<<<<<<< HEAD
   """Rewrite the values in a column in-place."""
   rewrites = []
   for x in df[column]:
@@ -114,15 +118,22 @@ def FormatDataFrameAsAsciiTable(
 =======
 def RewriteColumn(df: pd.DataFrame, column: str,
                   rewrite: typing.Callable[[typing.Any], typing.Any]):
+=======
+>>>>>>> 4242aed2a... Automated code format.
   """Rewrite the values in a column in-place."""
   df[column] = [rewrite(x) for x in df[column]]
 
 
 def FormatDataFrameAsAsciiTable(df: pd.DataFrame, **tabulate_args):
   default_args = {
+<<<<<<< HEAD
       'headers': 'keys',
       'tablefmt': 'psql',
 >>>>>>> 45574a301... Add the tabulate package.:labm8/pdutil.py
+=======
+    "headers": "keys",
+    "tablefmt": "psql",
+>>>>>>> 4242aed2a... Automated code format.
   }
   default_args.update(tabulate_args)
   return tabulate.tabulate(df, **default_args)

@@ -76,7 +76,8 @@ class File404(Error):
 
 # A list of file names that frequently appear in file systems that are not
 # "useful".
-COMMONLY_IGNORED_FILE_NAMES = set([
+COMMONLY_IGNORED_FILE_NAMES = set(
+  [
     "._.DS_Store",
     ".com.apple.timemachine.donotpresent",
     ".com.apple.timemachine.supported",
@@ -86,7 +87,8 @@ COMMONLY_IGNORED_FILE_NAMES = set([
     ".VolumeIcon.icns",
     ".VolumeIcon.ico",
     "autorun.inf",
-])
+  ]
+)
 
 <<<<<<< HEAD:labm8/py/fs.py
 # A list of file names that frequently appear in file systems that are not
@@ -302,9 +304,7 @@ def ls(
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/fs.py
 =======
 def ls(
-    root: typing.Union[str, pathlib.Path] = '.',
-    abspaths=False,
-    recursive=False,
+  root: typing.Union[str, pathlib.Path] = ".", abspaths=False, recursive=False,
 ):
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/fs.py
   """
@@ -341,6 +341,7 @@ def ls(
 
   def _expand_subdirs(file):
     if isdir(path(root, file)):
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/fs.py
 <<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/fs.py
@@ -362,6 +363,11 @@ def ls(
           file,
       ] + [path(file, x) for x in ls(path(root, file), recursive=True)]
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/fs.py
+=======
+      return [file,] + [
+        path(file, x) for x in ls(path(root, file), recursive=True)
+      ]
+>>>>>>> 4242aed2a... Automated code format.
     else:
       return [file]
 
@@ -383,7 +389,7 @@ def ls(
     return list(sorted(os.listdir(root)))
 
 
-def lsdirs(root='.', **kwargs):
+def lsdirs(root=".", **kwargs):
   """
   Return only subdirectories from a directory listing.
 
@@ -406,7 +412,7 @@ def lsdirs(root='.', **kwargs):
   return [_path for _path in paths if isdir(path(root, _path))]
 
 
-def lsfiles(root: typing.Union[str, pathlib.Path] = '.', **kwargs):
+def lsfiles(root: typing.Union[str, pathlib.Path] = ".", **kwargs):
   """
   Return only files from a directory listing.
 
@@ -448,7 +454,7 @@ def rm(*components, **kwargs):
         paths (default: True).
   """
   _path = path(*components)
-  glob = kwargs.get('glob', True)
+  glob = kwargs.get("glob", True)
   paths = iglob(_path) if glob else [_path]
 
   for file in paths:
@@ -565,8 +571,8 @@ def read(*components, **kwargs):
 
       IOError: if reading path fails
   """
-  rstrip = kwargs.get('rstrip', True)
-  comment_char = kwargs.get('comment_char', None)
+  rstrip = kwargs.get("rstrip", True)
+  comment_char = kwargs.get("comment_char", None)
 
   ignore_comments = comment_char is not None
 
@@ -576,8 +582,8 @@ def read(*components, **kwargs):
 
   # Multiple definitions to handle all cases.
   if ignore_comments:
-    comment_line_re = re.compile('^\s*{char}'.format(char=comment_char))
-    not_comment_re = re.compile('[^{char}]+'.format(char=comment_char))
+    comment_line_re = re.compile("^\s*{char}".format(char=comment_char))
+    not_comment_re = re.compile("[^{char}]+".format(char=comment_char))
 
     if rstrip:
       # Ignore comments, and right strip results.
@@ -623,7 +629,7 @@ def du(*components, **kwargs):
   Returns:
       int or str: If "human_readble" kwarg is True, return str, else int.
   """
-  human_readable = kwargs.get('human_readable', True)
+  human_readable = kwargs.get("human_readable", True)
 
   _path = path(*components)
   if not exists(_path):
@@ -717,6 +723,7 @@ def TemporaryWorkingDir(prefix: str = "phd_") -> pathlib.Path:
 
 @contextlib.contextmanager
 <<<<<<< HEAD
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/fs.py
 def TemporaryWorkingDir(prefix: str = None) -> pathlib.Path:
 >>>>>>> 583709888... Move TemporaryWorkingDir() into labm8.:lib/labm8/fs.py
@@ -729,6 +736,9 @@ def TemporaryWorkingDir(prefix: str = "phd_") -> pathlib.Path:
 =======
 def TemporaryWorkingDir(prefix: str = 'phd_') -> pathlib.Path:
 >>>>>>> 809f924cd... Set a default working directory prefix.:lib/labm8/fs.py
+=======
+def TemporaryWorkingDir(prefix: str = "phd_") -> pathlib.Path:
+>>>>>>> 4242aed2a... Automated code format.
   """A context manager which provides a temporary working directory.
 
   This creates an empty temporary directory, and changes the current working
@@ -773,9 +783,12 @@ def Read(filename: typing.Union[str, pathlib.Path]) -> str:
 
 
 def Write(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/fs.py
 <<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/fs.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
 =======
 >>>>>>> 4242aed2a... Automated code format.
   filename: typing.Union[str, pathlib.Path],
@@ -783,6 +796,7 @@ def Write(
   overwrite_existing: bool = True,
   mode: int = 0o0666,
   gid: int = None,
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 =======
@@ -798,6 +812,8 @@ def Write(
 >>>>>>> 4242aed2a... Automated code format.
 =======
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/fs.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
 ) -> pathlib.Path:
   """Create a file 'filename' with 'contents', with the mode given in 'mode'.
 
@@ -841,15 +857,19 @@ def Write(
 
 
 def AtomicWrite(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/fs.py
 <<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/fs.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
 =======
 >>>>>>> 4242aed2a... Automated code format.
   filename: typing.Union[str, pathlib.Path],
   contents: bytes,
   mode: int = 0o0666,
   gid: int = None,
+<<<<<<< HEAD
 <<<<<<< HEAD
 =======
 =======
@@ -864,6 +884,8 @@ def AtomicWrite(
 >>>>>>> 4242aed2a... Automated code format.
 =======
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/fs.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
 ) -> None:
   """Create a file 'filename' with 'contents' atomically.
 

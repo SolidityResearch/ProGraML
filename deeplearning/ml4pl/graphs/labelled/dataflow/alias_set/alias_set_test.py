@@ -14,9 +14,15 @@ from deeplearning.ml4pl.graphs.unlabelled.cdfg import (
 )
 =======
 from deeplearning.ml4pl.graphs.labelled.alias_set import alias_set
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/alias_set/alias_set_test.py
 from deeplearning.ml4pl.graphs.unlabelled.cdfg import \
   control_and_data_flow_graph as cdfg
 >>>>>>> 8be094257... Move //labm8 to //labm8/py.:deeplearning/ml4pl/graphs/labelled/alias_set/alias_set_test.py
+=======
+from deeplearning.ml4pl.graphs.unlabelled.cdfg import (
+  control_and_data_flow_graph as cdfg,
+)
+>>>>>>> 4242aed2a... Automated code format.:deeplearning/ml4pl/graphs/labelled/alias_set/alias_set_test.py
 from labm8.py import app
 from labm8.py import test
 
@@ -77,10 +83,14 @@ void A() {
   for node, data in graphs[0].nodes(data=True):
     # Test the 'selector' node.
 <<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/alias_set/alias_set_test.py
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/alias_set/alias_set_test.py
     assert data["x"][1] in {0, 1}
 =======
     assert data['x'][1] in {0, 1}
 >>>>>>> 4b5c49f10... Add alias set support for multiple embeddings.:deeplearning/ml4pl/graphs/labelled/alias_set/alias_set_test.py
+=======
+    assert data["x"][1] in {0, 1}
+>>>>>>> 4242aed2a... Automated code format.:deeplearning/ml4pl/graphs/labelled/alias_set/alias_set_test.py
     # Test the labels.
     if node in identifiers_in_alias_set:
       assert np.array_equal(data["y"], [0, 1, 0])
@@ -123,10 +133,14 @@ void B() {
     for node, data in graph.nodes(data=True):
       # Test the 'selector' node.
 <<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/alias_set/alias_set_test.py
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/alias_set/alias_set_test.py
       assert data["x"][1] in {0, 1}
 =======
       assert data['x'][1] in {0, 1}
 >>>>>>> 4b5c49f10... Add alias set support for multiple embeddings.:deeplearning/ml4pl/graphs/labelled/alias_set/alias_set_test.py
+=======
+      assert data["x"][1] in {0, 1}
+>>>>>>> 4242aed2a... Automated code format.:deeplearning/ml4pl/graphs/labelled/alias_set/alias_set_test.py
       # Test the labels.
       if node in identifiers_in_alias_set:
         assert np.array_equal(data["y"], [0, 1, 0])

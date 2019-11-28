@@ -73,11 +73,12 @@ def truncate(string, maxchar):
       TruncateError: In case of an error.
   """
   if maxchar < 4:
-    raise TruncateError('Maxchar must be > 3')
+    raise TruncateError("Maxchar must be > 3")
 
   if len(string) <= maxchar:
     return string
   else:
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/text.py
 <<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/text.py
@@ -91,6 +92,9 @@ def truncate(string, maxchar):
 =======
     return string[:maxchar - 3] + '...'
 >>>>>>> 71f0f800d... Replace double quotes with single.:labm8/text.py
+=======
+    return string[: maxchar - 3] + "..."
+>>>>>>> 4242aed2a... Automated code format.
 
 
 def levenshtein(s1, s2):
@@ -258,7 +262,7 @@ def AutoCompletePrefix(prefix: str, trie: nx.DiGraph) -> typing.Set[str]:
     KeyError: If the prefix is not found.
   """
   if not prefix:
-    raise ValueError('Prefix cannot be empty')
+    raise ValueError("Prefix cannot be empty")
 
   ret = set()
 
@@ -280,6 +284,7 @@ def AutoCompletePrefix(prefix: str, trie: nx.DiGraph) -> typing.Set[str]:
 def CamelCapsToUnderscoreSeparated(camel_caps_str: str):
   components = re.findall("[A-Z][^A-Z]*", camel_caps_str)
   assert components
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/text.py
   return "_".join(x.lower() for x in components)
 
@@ -303,6 +308,13 @@ def StripSingleLineComments(
     string: str,
     start_comment_re: str = '(#|//)',
 >>>>>>> 14720263b... Add trailing comma.:labm8/text.py
+=======
+  return "_".join(x.lower() for x in components)
+
+
+def StripSingleLineComments(
+  string: str, start_comment_re: str = "(#|//)",
+>>>>>>> 4242aed2a... Automated code format.
 ) -> str:
   """Strip line comments from a string.
 
