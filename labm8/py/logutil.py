@@ -25,6 +25,7 @@ from absl import logging
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/logutil.py
 
 <<<<<<< HEAD:labm8/py/logutil.py
+<<<<<<< HEAD:labm8/py/logutil.py
 from absl import logging
 <<<<<<< HEAD:labm8/py/logutil.py
 
@@ -38,6 +39,11 @@ from labm8.py.internal import logging_pb2
 from phd.lib.labm8 import labdate
 from phd.lib.labm8.proto import logging_pb2
 >>>>>>> 386c66354... Add 'phd' prefix to labm8 imports.:lib/labm8/logutil.py
+=======
+from labm8.py import app
+from labm8.py import labdate
+from labm8.py.internal import logging_pb2
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/logutil.py
 =======
 from labm8.py import app
 from labm8.py import labdate

@@ -23,10 +23,13 @@ import progressbar
 import pyparsing
 <<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_linux.py
 <<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_linux.py
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_linux.py
 =======
 from labm8 import app
 from labm8 import decorators
 >>>>>>> 1acf38cb4... Automated code format.:deeplearning/ml4pl/bytecode/create/import_from_linux.py
+=======
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:deeplearning/ml4pl/bytecode/create/import_from_linux.py
 =======
 >>>>>>> 8be094257... Move //labm8 to //labm8/py.:deeplearning/ml4pl/bytecode/create/import_from_linux.py
 
@@ -49,7 +52,12 @@ from labm8.py import decorators
 from deeplearning.ml4pl.graphs.unlabelled.cfg import control_flow_graph as cfg
 from deeplearning.ml4pl.graphs.unlabelled.cfg import llvm_util
 <<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_linux.py
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_linux.py
 >>>>>>> 1acf38cb4... Automated code format.:deeplearning/ml4pl/bytecode/create/import_from_linux.py
+=======
+from labm8.py import app
+from labm8.py import decorators
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:deeplearning/ml4pl/bytecode/create/import_from_linux.py
 =======
 from labm8.py import app
 from labm8.py import decorators

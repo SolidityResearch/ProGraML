@@ -310,6 +310,7 @@ def Chunkify(
 <<<<<<< HEAD:labm8/py/labtypes.py
 <<<<<<< HEAD:labm8/py/labtypes.py
 <<<<<<< HEAD:labm8/py/labtypes.py
+<<<<<<< HEAD:labm8/py/labtypes.py
 
 =======
 >>>>>>> 4f357866c... Add two utility functions.:labm8/labtypes.py
@@ -318,6 +319,9 @@ def Chunkify(
 >>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/labtypes.py
 =======
 >>>>>>> 4f357866c... Add two utility functions.:labm8/labtypes.py
+=======
+
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/labtypes.py
 def DeleteKeys(d, keys):
   """Delete the keys from the given dictionary, if present.
 

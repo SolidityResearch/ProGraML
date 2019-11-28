@@ -65,6 +65,7 @@ from phd.lib.labm8 import fs
 from phd.lib.labm8 import fs
 from sys import platform
 
+<<<<<<< HEAD:labm8/py/system.py
 >>>>>>> c774253ad... Add a function to process a file in place.:lib/labm8/system.py
 =======
 from sys import platform
@@ -85,6 +86,10 @@ from sys import platform
 from phd.lib.labm8 import fs
 
 >>>>>>> 1eed6e90b... Automated code format.:lib/labm8/system.py
+=======
+from labm8.py import app
+from labm8.py import fs
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/system.py
 
 HOSTNAME = socket.gethostname()
 USERNAME = getpass.getuser()

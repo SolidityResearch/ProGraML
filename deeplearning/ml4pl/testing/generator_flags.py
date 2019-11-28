@@ -16,6 +16,7 @@
 """Flags for random data generators."""
 from labm8.py import app
 
+<<<<<<< HEAD:deeplearning/ml4pl/testing/generator_flags.py
 
 FLAGS = app.FLAGS
 
@@ -24,4 +25,15 @@ app.DEFINE_integer(
   "split_count",
   10,
   "The number of splits for random graphs. If 0, no splits are assigned.",
+=======
+py_test(
+    name = "pipeline_test",
+    srcs = ["pipeline_test.py"],
+    deps = [
+        "//compilers/llvm:clang",
+        "//compilers/llvm:opt",
+        "//labm8/py:app",
+        "//labm8/py:test",
+    ],
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:compilers/llvm/tests/BUILD
 )

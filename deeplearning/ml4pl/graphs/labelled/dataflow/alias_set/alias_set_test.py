@@ -7,10 +7,16 @@ import pytest
 
 from compilers.llvm import clang
 from compilers.llvm import opt
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/alias_set/alias_set_test.py
 from deeplearning.ml4pl.graphs.labelled.dataflow.alias_set import alias_set
 from deeplearning.ml4pl.graphs.unlabelled.cdfg import (
   control_and_data_flow_graph as cdfg,
 )
+=======
+from deeplearning.ml4pl.graphs.labelled.alias_set import alias_set
+from deeplearning.ml4pl.graphs.unlabelled.cdfg import \
+  control_and_data_flow_graph as cdfg
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:deeplearning/ml4pl/graphs/labelled/alias_set/alias_set_test.py
 from labm8.py import app
 from labm8.py import test
 
