@@ -49,16 +49,22 @@ FLAGS = app.FLAGS
 # A regular expression to match the components of an absl logging prefix. See:
 # https://github.com/abseil/abseil-py/blob/e69e200f680a20c50e0e2cd9e74e9850ff69b856/absl/logging/__init__.py#L554-L583
 ABSL_LOGGING_LINE_RE = re.compile(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/logutil.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
   r"(?P<lvl>[IWEF])(?P<timestamp>\d\d\d\d \d\d:\d\d:\d\d.\d\d\d\d\d\d) "
   r"(?P<thread_id>\d+) (?P<filename>[^:]+):(?P<lineno>\d+)] "
   r"(?P<contents>.*)",
 )
+<<<<<<< HEAD
 =======
     r'(?P<lvl>[IWEF])(?P<timestamp>\d\d\d\d \d\d:\d\d:\d\d.\d\d\d\d\d\d) '
     r'(?P<thread_id>\d+) (?P<filename>[^:]+):(?P<lineno>\d+)] '
     r'(?P<contents>.*)',)
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/logutil.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
 
 # Convert a single letter absl logging prefix to a LogRecord.LogLevel. Since
 # absl logging uses the same prefix for logging.DEBUG and logging.INFO, this
@@ -72,12 +78,16 @@ ABSL_LEVEL_TO_LOG_RECORD_LEVEL = {
 
 
 def DatetimeFromAbslTimestamp(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/logutil.py
   timestamp: str, year: int = datetime.datetime.utcnow().year,
 =======
     timestamp: str,
     year: int = datetime.datetime.utcnow().year,
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/logutil.py
+=======
+  timestamp: str, year: int = datetime.datetime.utcnow().year,
+>>>>>>> 4242aed2a... Automated code format.
 ) -> datetime.datetime:
   """Convert absl logging timestamp to datetime.
 
@@ -97,12 +107,16 @@ def DatetimeFromAbslTimestamp(
 
 
 def ConertAbslLogToProtos(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/logutil.py
   logs: str, year: int = datetime.datetime.utcnow().year,
 =======
     logs: str,
     year: int = datetime.datetime.utcnow().year,
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/logutil.py
+=======
+  logs: str, year: int = datetime.datetime.utcnow().year,
+>>>>>>> 4242aed2a... Automated code format.
 ) -> typing.List[logging_pb2.LogRecord]:
   """Convert the output of logging with absl logging to LogRecord protos.
 
@@ -125,11 +139,17 @@ def ConertAbslLogToProtos(
     """Convert the current starting_match and lines_buffer into a LogRecord."""
     if starting_match:
       records.append(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/logutil.py
         logging_pb2.LogRecord(
           level=ABSL_LEVEL_TO_LOG_RECORD_LEVEL[starting_match.group("lvl")],
           date_utc_epoch_ms=labdate.MillisecondsTimestamp(
 <<<<<<< HEAD:labm8/py/logutil.py
+=======
+        logging_pb2.LogRecord(
+          level=ABSL_LEVEL_TO_LOG_RECORD_LEVEL[starting_match.group("lvl")],
+          date_utc_epoch_ms=labdate.MillisecondsTimestamp(
+>>>>>>> 4242aed2a... Automated code format.
             DatetimeFromAbslTimestamp(
               starting_match.group("timestamp"), year=year,
             ),
@@ -144,6 +164,7 @@ def ConertAbslLogToProtos(
       )
 
   for line in logs.split("\n"):
+<<<<<<< HEAD
 =======
               DatetimeFromAbslTimestamp(
                   starting_match.group('timestamp'), year=year)),
@@ -170,6 +191,8 @@ def ConertAbslLogToProtos(
 
   for line in logs.split('\n'):
 >>>>>>> 620197b9a... Fix year on logutil.:labm8/logutil.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
     m = ABSL_LOGGING_LINE_RE.match(line)
     if m:
       ConvertOne()
@@ -185,6 +208,7 @@ def ConertAbslLogToProtos(
 
 
 def StartTeeLogsToFile(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/logutil.py
   program_name: str = None,
   log_dir: str = None,
@@ -194,6 +218,11 @@ def StartTeeLogsToFile(
     log_dir: str = None,
     file_log_level: int = logging.DEBUG,
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/logutil.py
+=======
+  program_name: str = None,
+  log_dir: str = None,
+  file_log_level: int = logging.DEBUG,
+>>>>>>> 4242aed2a... Automated code format.
 ) -> None:
   """Log messages to file as well as stderr.
 
@@ -225,6 +254,7 @@ def StopTeeLogsToFile():
 
 @contextlib.contextmanager
 def TeeLogsToFile(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/logutil.py
   program_name: str = None,
   log_dir: str = None,
@@ -234,6 +264,11 @@ def TeeLogsToFile(
     log_dir: str = None,
     file_log_level: int = logging.DEBUG,
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/logutil.py
+=======
+  program_name: str = None,
+  log_dir: str = None,
+  file_log_level: int = logging.DEBUG,
+>>>>>>> 4242aed2a... Automated code format.
 ):
   """Temporarily enable logging to file.
 

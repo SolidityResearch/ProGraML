@@ -58,13 +58,17 @@ from labm8.internal import logging
 FLAGS = absl_flags.FLAGS
 
 absl_flags.DEFINE_boolean(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/app.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
   "version", False, "Print version information and exit.",
 )
-absl_flags.DEFINE_boolean('dump_flags', False,
-                          'Print the defined flags and their values and exit.')
 absl_flags.DEFINE_boolean(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/app.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
   "dump_flags", False, "Print the defined flags and their values and exit."
 )
 absl_flags.DEFINE_boolean(
@@ -75,6 +79,7 @@ absl_flags.DEFINE_boolean(
 absl_flags.DEFINE_boolean(
   "log_colors", True, "Whether to colorize logging output."
 )
+<<<<<<< HEAD
 
 # A decorator to mark a function as ignored when computing the log prefix.
 #
@@ -96,6 +101,8 @@ skip_log_prefix = absl_logging.skip_log_prefix
 absl_flags.DEFINE_boolean('log_colors', True,
                           'Whether to colorize logging output.')
 >>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/app.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
 
 
 class UsageError(absl_app.UsageError):
@@ -128,17 +135,23 @@ def GetVersionInformationString() -> str:
   # version information.
   try:
     import build_info
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/app.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
 
     version = "\n".join(
       [build_info.FormatVersion(), build_info.FormatShortBuildDescription(),]
     )
+<<<<<<< HEAD
 =======
     version = '\n'.join([
         build_info.FormatVersion(),
         build_info.FormatShortBuildDescription(),
     ])
 >>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/app.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
     url = build_info.GetGithubCommitUrl()
   except ModuleNotFoundError:
     import pkg_resources
@@ -147,6 +160,7 @@ def GetVersionInformationString() -> str:
     url = "https://github.com/ChrisCummins/labm8"
   return "\n".join(
     [
+<<<<<<< HEAD
       version,
       "Copyright (C) 2014-2019 Chris Cummins <chrisc.101@gmail.com>",
       f"<{url}>",
@@ -175,6 +189,17 @@ def RunWithArgs(
     main: Callable[[List[str]], None],
     argv: Optional[List[str]] = None,
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/app.py
+=======
+      version,
+      "Copyright (C) 2014-2019 Chris Cummins <chrisc.101@gmail.com>",
+      f"<{url}>",
+    ]
+  )
+
+
+def RunWithArgs(
+  main: Callable[[List[str]], None], argv: Optional[List[str]] = None,
+>>>>>>> 4242aed2a... Automated code format.
 ):
   """Begin executing the program.
 
@@ -208,11 +233,18 @@ def RunWithArgs(
 >>>>>>> 6c0de7d86... Add a json_safe arg to FlagsToJson().:labm8/app.py
 =======
       print(
+<<<<<<< HEAD
           json.dumps(FlagsToDict(),
                      sort_keys=True,
                      indent=2,
                      separators=(',', ': ')))
 >>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/app.py
+=======
+        json.dumps(
+          FlagsToDict(), sort_keys=True, indent=2, separators=(",", ": ")
+        )
+      )
+>>>>>>> 4242aed2a... Automated code format.
       sys.exit(0)
     main(argv)
 
@@ -277,7 +309,11 @@ def Log(level: int, msg, *args, **kwargs):
     "value given by --v."
   """
   logging.Log(
+<<<<<<< HEAD
     logging.GetCallingModuleName(),
+=======
+    calling_module,
+>>>>>>> 4242aed2a... Automated code format.
     level,
     _MaybeColorizeLog(
       shell.ShellEscapeCodes.YELLOW
@@ -299,6 +335,7 @@ def LogIf(level: int, condition, msg, *args, **kwargs):
 @skip_log_prefix
 def Fatal(msg, *args, **kwargs):
   """Logs a fatal message."""
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/app.py
   logging.Fatal(
     _MaybeColorizeLog(shell.ShellEscapeCodes.RED, msg, *args), **kwargs
@@ -307,6 +344,11 @@ def Fatal(msg, *args, **kwargs):
   logging.Fatal(_MaybeColorizeLog(shell.ShellEscapeCodes.RED, msg, *args),
                 **kwargs)
 >>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/app.py
+=======
+  logging.Fatal(
+    _MaybeColorizeLog(shell.ShellEscapeCodes.RED, msg, *args), **kwargs
+  )
+>>>>>>> 4242aed2a... Automated code format.
 
 
 @skip_log_prefix
@@ -319,6 +361,7 @@ def FatalWithoutStackTrace(msg, *args, returncode: int = 1, **kwargs):
 @skip_log_prefix
 def Error(msg, *args, **kwargs):
   """Logs an error message."""
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/app.py
   logging.Error(
     _MaybeColorizeLog(shell.ShellEscapeCodes.RED, msg, *args), **kwargs
@@ -327,11 +370,17 @@ def Error(msg, *args, **kwargs):
   logging.Error(_MaybeColorizeLog(shell.ShellEscapeCodes.RED, msg, *args),
                 **kwargs)
 >>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/app.py
+=======
+  logging.Error(
+    _MaybeColorizeLog(shell.ShellEscapeCodes.RED, msg, *args), **kwargs
+  )
+>>>>>>> 4242aed2a... Automated code format.
 
 
 @skip_log_prefix
 def Warning(msg, *args, **kwargs):
   """Logs a warning message."""
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/app.py
   logging.Warning(
     _MaybeColorizeLog(shell.ShellEscapeCodes.RED, msg, *args), **kwargs
@@ -340,6 +389,11 @@ def Warning(msg, *args, **kwargs):
   logging.Warning(_MaybeColorizeLog(shell.ShellEscapeCodes.RED, msg, *args),
                   **kwargs)
 >>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/app.py
+=======
+  logging.Warning(
+    _MaybeColorizeLog(shell.ShellEscapeCodes.RED, msg, *args), **kwargs
+  )
+>>>>>>> 4242aed2a... Automated code format.
 
 
 def FlushLogs():
@@ -443,11 +497,15 @@ def FlagsToDict(json_safe: bool = False) -> Dict[str, Any]:
   flattened_flags_dict = {}
   for module in flags_dict:
     for flag in flags_dict[module]:
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/app.py
       flattened_flags_dict[f"{module}.{flag.name}"] = flag.value
 =======
       flattened_flags_dict[f'{module}.{flag.name}'] = flag.value
 >>>>>>> 6c0de7d86... Add a json_safe arg to FlagsToJson().:labm8/app.py
+=======
+      flattened_flags_dict[f"{module}.{flag.name}"] = flag.value
+>>>>>>> 4242aed2a... Automated code format.
 
   if json_safe:
     # Flags values can have non-serializable types, so try each one and
@@ -480,6 +538,7 @@ def DEFINE_string(
   help: str,
   required: bool = False,
   validator: Callable[[str], bool] = None,
+<<<<<<< HEAD
 ):
   """Registers a flag whose value can be any string."""
   absl_flags.DEFINE_string(
@@ -499,6 +558,12 @@ def DEFINE_string(
       help,
       module_name=get_calling_module_name(),
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/app.py
+=======
+):
+  """Registers a flag whose value can be any string."""
+  absl_flags.DEFINE_string(
+    name, default, help, module_name=get_calling_module_name(),
+>>>>>>> 4242aed2a... Automated code format.
   )
   if required:
     absl_flags.mark_flag_as_required(name)
@@ -507,7 +572,10 @@ def DEFINE_string(
 
 
 def DEFINE_integer(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/app.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
   name: str,
   default: Optional[int],
   help: str,
@@ -515,6 +583,7 @@ def DEFINE_integer(
   lower_bound: Optional[int] = None,
   upper_bound: Optional[int] = None,
   validator: Callable[[int], bool] = None,
+<<<<<<< HEAD
 ):
   """Registers a flag whose value must be an integer."""
   absl_flags.DEFINE_integer(
@@ -542,6 +611,17 @@ def DEFINE_integer(
       lower_bound=lower_bound,
       upper_bound=upper_bound,
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/app.py
+=======
+):
+  """Registers a flag whose value must be an integer."""
+  absl_flags.DEFINE_integer(
+    name,
+    default,
+    help,
+    module_name=get_calling_module_name(),
+    lower_bound=lower_bound,
+    upper_bound=upper_bound,
+>>>>>>> 4242aed2a... Automated code format.
   )
   if required:
     absl_flags.mark_flag_as_required(name)
@@ -550,7 +630,10 @@ def DEFINE_integer(
 
 
 def DEFINE_float(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/app.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
   name: str,
   default: Optional[float],
   help: str,
@@ -558,6 +641,7 @@ def DEFINE_float(
   lower_bound: Optional[float] = None,
   upper_bound: Optional[float] = None,
   validator: Callable[[float], bool] = None,
+<<<<<<< HEAD
 ):
   """Registers a flag whose value must be a float."""
   absl_flags.DEFINE_float(
@@ -585,6 +669,17 @@ def DEFINE_float(
       lower_bound=lower_bound,
       upper_bound=upper_bound,
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/app.py
+=======
+):
+  """Registers a flag whose value must be a float."""
+  absl_flags.DEFINE_float(
+    name,
+    default,
+    help,
+    module_name=get_calling_module_name(),
+    lower_bound=lower_bound,
+    upper_bound=upper_bound,
+>>>>>>> 4242aed2a... Automated code format.
   )
   if required:
     absl_flags.mark_flag_as_required(name)
@@ -593,12 +688,16 @@ def DEFINE_float(
 
 
 def DEFINE_boolean(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/app.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
   name: str,
   default: Optional[bool],
   help: str,
   required: bool = False,
   validator: Callable[[bool], bool] = None,
+<<<<<<< HEAD
 ):
   """Registers a flag whose value must be a boolean."""
   absl_flags.DEFINE_boolean(
@@ -617,6 +716,12 @@ def DEFINE_boolean(
       help,
       module_name=get_calling_module_name(),
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/app.py
+=======
+):
+  """Registers a flag whose value must be a boolean."""
+  absl_flags.DEFINE_boolean(
+    name, default, help, module_name=get_calling_module_name(),
+>>>>>>> 4242aed2a... Automated code format.
   )
   if required:
     absl_flags.mark_flag_as_required(name)
@@ -625,12 +730,16 @@ def DEFINE_boolean(
 
 
 def DEFINE_list(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/app.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
   name: str,
   default: Optional[List[Any]],
   help: str,
   required: bool = False,
   validator: Callable[[List[Any]], bool] = None,
+<<<<<<< HEAD
 ):
   """Registers a flag whose value must be a list."""
   absl_flags.DEFINE_list(
@@ -649,6 +758,12 @@ def DEFINE_list(
       help,
       module_name=get_calling_module_name(),
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/app.py
+=======
+):
+  """Registers a flag whose value must be a list."""
+  absl_flags.DEFINE_list(
+    name, default, help, module_name=get_calling_module_name(),
+>>>>>>> 4242aed2a... Automated code format.
   )
   if required:
     absl_flags.mark_flag_as_required(name)
@@ -660,13 +775,17 @@ def DEFINE_list(
 
 
 def DEFINE_input_path(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/app.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
   name: str,
   default: Union[None, str, pathlib.Path],
   help: str,
   required: bool = False,
   is_dir: bool = False,
   validator: Callable[[pathlib.Path], bool] = None,
+<<<<<<< HEAD
 =======
     name: str,
     default: Union[None, str, pathlib.Path],
@@ -675,6 +794,8 @@ def DEFINE_input_path(
     is_dir: bool = False,
     validator: Callable[[pathlib.Path], bool] = None,
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/app.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
 ):
   """Registers a flag whose value is an input path.
 
@@ -693,7 +814,10 @@ def DEFINE_input_path(
   parser = flags_parsers.PathParser(must_exist=True, is_dir=is_dir)
   serializer = absl_flags.ArgumentSerializer()
   absl_flags.DEFINE(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/app.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
     parser,
     name,
     default,
@@ -701,6 +825,7 @@ def DEFINE_input_path(
     absl_flags.FLAGS,
     serializer,
     module_name=get_calling_module_name(),
+<<<<<<< HEAD
 =======
       parser,
       name,
@@ -710,6 +835,8 @@ def DEFINE_input_path(
       serializer,
       module_name=get_calling_module_name(),
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/app.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
   )
   if required:
     absl_flags.mark_flag_as_required(name)
@@ -718,7 +845,10 @@ def DEFINE_input_path(
 
 
 def DEFINE_output_path(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/app.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
   name: str,
   default: Union[None, str, pathlib.Path],
   help: str,
@@ -727,6 +857,7 @@ def DEFINE_output_path(
   exist_ok: bool = True,
   must_exist: bool = False,
   validator: Callable[[pathlib.Path], bool] = None,
+<<<<<<< HEAD
 =======
     name: str,
     default: Union[None, str, pathlib.Path],
@@ -737,6 +868,8 @@ def DEFINE_output_path(
     must_exist: bool = False,
     validator: Callable[[pathlib.Path], bool] = None,
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/app.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
 ):
   """Registers a flag whose value is an output path.
 
@@ -758,6 +891,7 @@ def DEFINE_output_path(
     must_exist: If True, require that the path exists, else parsing will fail.
   """
   parser = flags_parsers.PathParser(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/app.py
     must_exist=must_exist, exist_ok=exist_ok, is_dir=is_dir,
   )
@@ -785,6 +919,19 @@ def DEFINE_output_path(
       serializer,
       module_name=get_calling_module_name(),
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/app.py
+=======
+    must_exist=must_exist, exist_ok=exist_ok, is_dir=is_dir,
+  )
+  serializer = absl_flags.ArgumentSerializer()
+  absl_flags.DEFINE(
+    parser,
+    name,
+    default,
+    help,
+    absl_flags.FLAGS,
+    serializer,
+    module_name=get_calling_module_name(),
+>>>>>>> 4242aed2a... Automated code format.
   )
   if required:
     absl_flags.mark_flag_as_required(name)
@@ -793,13 +940,17 @@ def DEFINE_output_path(
 
 
 def DEFINE_database(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/app.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
   name: str,
   database_class,
   default: Optional[str],
   help: str,
   must_exist: bool = False,
   validator: Callable[[Any], bool] = None,
+<<<<<<< HEAD
 =======
     name: str,
     database_class,
@@ -808,6 +959,8 @@ def DEFINE_database(
     must_exist: bool = False,
     validator: Callable[[Any], bool] = None,
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/app.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
 ):
   """Registers a flag whose value is a sqlutil.Database class.
 
@@ -828,7 +981,10 @@ def DEFINE_database(
   parser = flags_parsers.DatabaseParser(database_class, must_exist=must_exist)
   serializer = absl_flags.ArgumentSerializer()
   absl_flags.DEFINE(
+<<<<<<< HEAD
 <<<<<<< HEAD:labm8/py/app.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
     parser,
     name,
     default,
@@ -836,6 +992,7 @@ def DEFINE_database(
     absl_flags.FLAGS,
     serializer,
     module_name=get_calling_module_name(),
+<<<<<<< HEAD
 =======
       parser,
       name,
@@ -845,6 +1002,8 @@ def DEFINE_database(
       serializer,
       module_name=get_calling_module_name(),
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/app.py
+=======
+>>>>>>> 4242aed2a... Automated code format.
   )
   if validator:
     RegisterFlagValidator(name, validator)
@@ -896,10 +1055,16 @@ def RegisterFlagValidator(
   message: str = "Flag validation failed",
 =======
 def RegisterFlagValidator(
+<<<<<<< HEAD
     flag_name: str,
     checker: Callable[[Any], bool],
     message: str = 'Flag validation failed',
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/app.py
+=======
+  flag_name: str,
+  checker: Callable[[Any], bool],
+  message: str = "Flag validation failed",
+>>>>>>> 4242aed2a... Automated code format.
 ):
   """Adds a constraint, which will be enforced during program execution.
 

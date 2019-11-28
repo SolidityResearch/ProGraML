@@ -143,6 +143,7 @@ def BytecodeFromLinuxSrc(path: pathlib.Path, optimization_level: str) -> str:
   process = clang.Exec(clang_args)
   if process.returncode:
 <<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_linux.py
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_linux.py
     raise clang.ClangException(
 <<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_linux.py
       returncode=process.returncode, stderr=process.stderr, command=clang_args
@@ -157,6 +158,11 @@ def BytecodeFromLinuxSrc(path: pathlib.Path, optimization_level: str) -> str:
                                stderr=process.stderr,
                                command=clang_args)
 >>>>>>> 1acf38cb4... Automated code format.:deeplearning/ml4pl/bytecode/create/import_from_linux.py
+=======
+    raise clang.ClangException(
+      returncode=process.returncode, stderr=process.stderr, command=clang_args
+    )
+>>>>>>> 4242aed2a... Automated code format.:deeplearning/ml4pl/bytecode/create/import_from_linux.py
   return process.stdout, clang_args
 
 
@@ -309,8 +315,12 @@ class LinuxSourcesDataset(linux.LinuxSourcesDataset):
 
     # Create the output table.
 <<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_linux.py
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_linux.py
     df = pd.DataFrame(
 <<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_linux.py
+=======
+    df = pd.DataFrame(
+>>>>>>> 4242aed2a... Automated code format.:deeplearning/ml4pl/bytecode/create/import_from_linux.py
       rows,
       columns=[
         "program:src_relpath",
@@ -324,6 +334,7 @@ class LinuxSourcesDataset(linux.LinuxSourcesDataset):
     )
 
     df.set_index(["program:src_relpath",], inplace=True)
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/import_from_linux.py
 =======
         rows,
         columns=[
@@ -352,6 +363,8 @@ class LinuxSourcesDataset(linux.LinuxSourcesDataset):
         'program:src_relpath',
     ], inplace=True)
 >>>>>>> 79a9a3551... Work in progress on graph model.:deeplearning/ml4pl/bytecode/create/import_from_linux.py
+=======
+>>>>>>> 4242aed2a... Automated code format.:deeplearning/ml4pl/bytecode/create/import_from_linux.py
     df.sort_index(inplace=True)
     return df
 

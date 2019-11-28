@@ -22,17 +22,27 @@ app.DEFINE_string(
 )
 =======
 app.DEFINE_input_path(
+<<<<<<< HEAD:labm8/py/google_sheets.py
     'google_sheets_credentials',
     '/var/phd/deeplearning/ml4pl/google_sheets_credentials.json',
     'The path to a google service account credentials JSON file.')
 >>>>>>> f7121e194... We gotta raise the bar.:deeplearning/ml4pl/models/eval/google_sheets.py
+=======
+  "google_sheets_credentials",
+  "/var/phd/deeplearning/ml4pl/google_sheets_credentials.json",
+  "The path to a google service account credentials JSON file.",
+)
+>>>>>>> 4242aed2a... Automated code format.:deeplearning/ml4pl/models/eval/google_sheets.py
 
 FLAGS = app.FLAGS
 
 
 class GoogleSheets:
+<<<<<<< HEAD:labm8/py/google_sheets.py
   """An object for working with google sheets."""
 
+=======
+>>>>>>> 4242aed2a... Automated code format.:deeplearning/ml4pl/models/eval/google_sheets.py
   def __init__(self, credentials_file: pathlib.Path):
     scope = [
       "https://spreadsheets.google.com/feeds",
@@ -58,10 +68,14 @@ class GoogleSheets:
     except gspread.exceptions.SpreadsheetNotFound:
       sheet = self._connection.create(name)
 <<<<<<< HEAD:labm8/py/google_sheets.py
+<<<<<<< HEAD:labm8/py/google_sheets.py
       sheet.share(share_with_email_address, perm_type="user", role="writer")
 =======
       sheet.share(share_with_email_address, perm_type='user', role='writer')
 >>>>>>> 930641c89... Only share sheet when it’s created:deeplearning/ml4pl/models/eval/google_sheets.py
+=======
+      sheet.share(share_with_email_address, perm_type="user", role="writer")
+>>>>>>> 4242aed2a... Automated code format.:deeplearning/ml4pl/models/eval/google_sheets.py
     return sheet
 
   @staticmethod
@@ -77,6 +91,7 @@ class GoogleSheets:
     """Export the given dataframe to a worksheet."""
 
 <<<<<<< HEAD:labm8/py/google_sheets.py
+<<<<<<< HEAD:labm8/py/google_sheets.py
     gspread_dataframe.set_with_dataframe(
       worksheet, df, include_index=index, resize=True
     )
@@ -89,6 +104,14 @@ class GoogleSheets:
 
   @classmethod
   def FromFlagsOrDie(cls) -> "GoogleSheets":
+=======
+    gspread_dataframe.set_with_dataframe(
+      worksheet, df, include_index=index, resize=True
+    )
+
+  @classmethod
+  def CreateFromFlagsOrDie(cls) -> "GoogleSheets":
+>>>>>>> 4242aed2a... Automated code format.:deeplearning/ml4pl/models/eval/google_sheets.py
     try:
       return cls(FLAGS.google_sheets_credentials)
     except Exception as e:
