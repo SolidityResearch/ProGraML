@@ -18,10 +18,19 @@ import typing
 
 import networkx as nx
 import numpy as np
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra_test.py
 
 from compilers.llvm import clang
 from compilers.llvm import opt
 from deeplearning.ml4pl.graphs.labelled.dataflow.polyhedra import polyhedra
+=======
+import pytest
+
+from compilers.llvm import clang
+from compilers.llvm import opt
+from deeplearning.ml4pl.graphs.labelled.polyhedra import polyhedra
+from labm8.py import app
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra_test.py
 from labm8.py import test
 
 

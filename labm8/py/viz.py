@@ -327,8 +327,13 @@ def PlotDot(dot: str) -> None:
     fs.Write(dot_path, dot.encode("utf-8"))
     try:
       subprocess.check_call(
+<<<<<<< HEAD:labm8/py/viz.py
         ["dot", str(dot_path), "-Tpng", "-o", str(png_path)]
       )
+=======
+          ['dot', str(dot_path), '-Tpng', '-o',
+           str(png_path)])
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/viz.py
     except subprocess.CalledProcessError as e:
       raise ValueError(f"Failed to process dotgraph: {dot}")
     display.display(display.Image(filename=f"{d}/dot.png"))

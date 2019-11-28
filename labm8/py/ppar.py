@@ -31,14 +31,20 @@ import threading
 import typing
 
 <<<<<<< HEAD:labm8/py/ppar.py
+<<<<<<< HEAD:labm8/py/ppar.py
+=======
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/ppar.py
 from labm8.py import app
 from labm8.py import bazelutil
 from labm8.py import pbutil
 from labm8.py import sqlutil
+<<<<<<< HEAD:labm8/py/ppar.py
 =======
 import humanize
 from absl import flags
 >>>>>>> 09956bade... Parallel execution fixes.:labm8/ppar.py
+=======
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/ppar.py
 
 FLAGS = app.FLAGS
 

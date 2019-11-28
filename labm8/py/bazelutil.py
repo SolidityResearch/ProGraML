@@ -10,6 +10,7 @@ import subprocess
 import typing
 
 <<<<<<< HEAD:labm8/py/bazelutil.py
+<<<<<<< HEAD:labm8/py/bazelutil.py
 from labm8.py import app
 from labm8.py import archive
 from labm8.py import fs
@@ -18,6 +19,11 @@ from labm8 import app
 from labm8 import archive
 from labm8 import fs
 >>>>>>> 6901f306f... Fix transitive dep resolving.:labm8/bazelutil.py
+=======
+from labm8.py import app
+from labm8.py import archive
+from labm8.py import fs
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/bazelutil.py
 
 # Regular expression to everything in a path up until the '*.runfiles'
 # directory, e.g. for the path '/private/var/bazel/foo/bar.runfiles/a/b/c',

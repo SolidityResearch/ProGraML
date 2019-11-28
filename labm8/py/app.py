@@ -15,15 +15,16 @@
 
 See: <https://github.com/abseil/abseil-py>
 """
+<<<<<<< HEAD:labm8/py/app.py
 import sys
 
+=======
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/app.py
 import functools
 import json
 import pathlib
 import re
-from absl import app as absl_app
-from absl import flags as absl_flags
-from absl import logging as absl_logging
+import sys
 from typing import Any
 from typing import Callable
 <<<<<<< HEAD:labm8/py/app.py
@@ -35,6 +36,9 @@ from typing import Optional
 from typing import Union
 
 <<<<<<< HEAD:labm8/py/app.py
+<<<<<<< HEAD:labm8/py/app.py
+=======
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/app.py
 from absl import app as absl_app
 from absl import flags as absl_flags
 from absl import logging as absl_logging
@@ -42,11 +46,14 @@ from absl import logging as absl_logging
 from labm8.py import shell
 from labm8.py.internal import flags_parsers
 from labm8.py.internal import logging
+<<<<<<< HEAD:labm8/py/app.py
 =======
 import build_info
 from labm8.internal import flags_parsers
 from labm8.internal import logging
 >>>>>>> 662ce8651... Add version string to `--version` output.:labm8/app.py
+=======
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/app.py
 
 FLAGS = absl_flags.FLAGS
 
@@ -54,7 +61,10 @@ absl_flags.DEFINE_boolean(
 <<<<<<< HEAD:labm8/py/app.py
   "version", False, "Print version information and exit.",
 )
+absl_flags.DEFINE_boolean('dump_flags', False,
+                          'Print the defined flags and their values and exit.')
 absl_flags.DEFINE_boolean(
+<<<<<<< HEAD:labm8/py/app.py
   "dump_flags", False, "Print the defined flags and their values and exit."
 )
 absl_flags.DEFINE_boolean(
@@ -80,6 +90,12 @@ skip_log_prefix = absl_logging.skip_log_prefix
     'Print version information and exit.',
 )
 >>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/app.py
+=======
+    'dump_flags_to_json', False,
+    'Print the defined flags and their values to JSON and exit.')
+absl_flags.DEFINE_boolean('log_colors', True,
+                          'Whether to colorize logging output.')
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/app.py
 
 
 class UsageError(absl_app.UsageError):
@@ -112,10 +128,17 @@ def GetVersionInformationString() -> str:
   # version information.
   try:
     import build_info
+<<<<<<< HEAD:labm8/py/app.py
 
     version = "\n".join(
       [build_info.FormatVersion(), build_info.FormatShortBuildDescription(),]
     )
+=======
+    version = '\n'.join([
+        build_info.FormatVersion(),
+        build_info.FormatShortBuildDescription(),
+    ])
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/app.py
     url = build_info.GetGithubCommitUrl()
   except ModuleNotFoundError:
     import pkg_resources
@@ -135,10 +158,16 @@ def RunWithArgs(
   main: Callable[[List[str]], None], argv: Optional[List[str]] = None,
 =======
   return '\n'.join([
+<<<<<<< HEAD:labm8/py/app.py
       build_info.FormatVersion(),
       build_info.FormatShortBuildDescription(),
       'Copyright (C) 2014-2019 Chris Cummins <chrisc.101@gmail.com>',
       f'<{build_info.GetGithubCommitUrl()}>',
+=======
+      version,
+      'Copyright (C) 2014-2019 Chris Cummins <chrisc.101@gmail.com>',
+      f'<{url}>',
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/app.py
   ])
 
 
@@ -167,6 +196,7 @@ def RunWithArgs(
       sys.exit(0)
     elif FLAGS.dump_flags_to_json:
 <<<<<<< HEAD:labm8/py/app.py
+<<<<<<< HEAD:labm8/py/app.py
       print(
         json.dumps(
           FlagsToDict(), sort_keys=True, indent=2, separators=(",", ": ")
@@ -176,6 +206,13 @@ def RunWithArgs(
       print(json.dumps(FlagsToDict(), sort_keys=True, indent=2,
                        separators=(',', ': ')))
 >>>>>>> 6c0de7d86... Add a json_safe arg to FlagsToJson().:labm8/app.py
+=======
+      print(
+          json.dumps(FlagsToDict(),
+                     sort_keys=True,
+                     indent=2,
+                     separators=(',', ': ')))
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/app.py
       sys.exit(0)
     main(argv)
 
@@ -262,9 +299,14 @@ def LogIf(level: int, condition, msg, *args, **kwargs):
 @skip_log_prefix
 def Fatal(msg, *args, **kwargs):
   """Logs a fatal message."""
+<<<<<<< HEAD:labm8/py/app.py
   logging.Fatal(
     _MaybeColorizeLog(shell.ShellEscapeCodes.RED, msg, *args), **kwargs
   )
+=======
+  logging.Fatal(_MaybeColorizeLog(shell.ShellEscapeCodes.RED, msg, *args),
+                **kwargs)
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/app.py
 
 
 @skip_log_prefix
@@ -277,17 +319,27 @@ def FatalWithoutStackTrace(msg, *args, returncode: int = 1, **kwargs):
 @skip_log_prefix
 def Error(msg, *args, **kwargs):
   """Logs an error message."""
+<<<<<<< HEAD:labm8/py/app.py
   logging.Error(
     _MaybeColorizeLog(shell.ShellEscapeCodes.RED, msg, *args), **kwargs
   )
+=======
+  logging.Error(_MaybeColorizeLog(shell.ShellEscapeCodes.RED, msg, *args),
+                **kwargs)
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/app.py
 
 
 @skip_log_prefix
 def Warning(msg, *args, **kwargs):
   """Logs a warning message."""
+<<<<<<< HEAD:labm8/py/app.py
   logging.Warning(
     _MaybeColorizeLog(shell.ShellEscapeCodes.RED, msg, *args), **kwargs
   )
+=======
+  logging.Warning(_MaybeColorizeLog(shell.ShellEscapeCodes.RED, msg, *args),
+                  **kwargs)
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:labm8/py/app.py
 
 
 def FlushLogs():

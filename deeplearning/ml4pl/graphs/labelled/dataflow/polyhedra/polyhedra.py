@@ -31,7 +31,12 @@ from labm8.py import decorators
 =======
 from deeplearning.ml4pl.graphs.unlabelled.cdfg import control_and_data_flow_graph as cdfg
 from deeplearning.ml4pl.graphs.unlabelled.cfg import llvm_util
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra.py
 >>>>>>> edb8c21d9... Automated code format.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
+=======
+from labm8.py import app
+from labm8.py import decorators
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
 
 FLAGS = app.FLAGS
 

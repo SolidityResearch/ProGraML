@@ -20,6 +20,13 @@ py_binary(
     name = "notebooks",
     srcs = ["//notebooks"],
     deps = [
+<<<<<<< HEAD:deeplearning/ml4pl/notebooks/BUILD
         "//deeplearning/ml4pl/models:log_analysis",
+=======
+        "//compilers/llvm:clang",
+        "//compilers/llvm:opt",
+        "//labm8/py:app",
+        "//labm8/py:test",
+>>>>>>> 8be094257... Move //labm8 to //labm8/py.:compilers/llvm/tests/BUILD
     ],
 )
