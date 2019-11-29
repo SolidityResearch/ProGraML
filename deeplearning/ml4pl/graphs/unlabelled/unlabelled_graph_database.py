@@ -58,10 +58,6 @@ class ProgramGraph(Base, sqlutil.PluralTablenameFromCamelCapsClassNameMixin):
   # databases.
   ir_id: int = sql.Column(sql.Integer, nullable=False, index=True)
 
-  # A string name to split the graphs in a database into discrete buckets, e.g.
-  # "train", "val", "test"; or "1", "2", ... k for k-fold classification.
-  split: str = sql.Column(sql.String(8), nullable=False, index=True)
-
   # The size of the program graph.
   node_count: int = sql.Column(sql.Integer, nullable=False)
   edge_count: int = sql.Column(sql.Integer, nullable=False)
@@ -114,9 +110,10 @@ class ProgramGraph(Base, sqlutil.PluralTablenameFromCamelCapsClassNameMixin):
     """Deserialize and load the protocol buffer."""
     proto = proto or programl_pb2.ProgramGraph()
     proto.ParseFromString(self.data.serialized_proto)
+    return proto
 
   @classmethod
-  def Create(cls, proto: programl_pb2.ProgramGraph, split: str, ir_id: int):
+  def Create(cls, proto: programl_pb2.ProgramGraph, split: str, ir_id: int) -> 'ProgramGraph':
     """Create a ProgramGraph from the given protocol buffer.
 
     This is the preferred method of populating databases of program graphs, as
@@ -174,7 +171,7 @@ class ProgramGraph(Base, sqlutil.PluralTablenameFromCamelCapsClassNameMixin):
 
 
 class ProgramGraphData(
-  Base, sqlutil.PluralTablenameFromCamelCapsClassNameMixin
+  Base, sqlutil.TablenameFromCamelCapsClassNameMixin
 ):
   """The protocol buffer of a program graph.
 
