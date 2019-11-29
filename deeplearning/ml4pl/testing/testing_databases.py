@@ -3,23 +3,19 @@
 This module automatically enumerates a list of database URLs to use for testing,
 and provides convenience functions to simplify creating test fixtures.
 
-To create empty databases, use GetDatabaseUrls() as parameters to a
-fixture which calls YieldDatabase():
+To create empty databases, use TEST_DB_URLS as parameters to a fixture which
+calls YieldDatabase():
 
-    @test.Fixture(scope="function",
-                  params=testing_databases.GetDatabaseUrls(),
-                  namer=testing_databases.DatabaseUrlNamer("my_db"))
+    @test.Fixture(scope="function", params=testing_databases.TEST_DB_URLS)
     def db(request) -> MyDatabaseClass:
       yield from testing_databases.YieldDatabase(
           MyDatabaseClass, request.param
       )
 
-To create pre-populated databases, use GetDatabaseUrls() as parameters to
-a fixture which calls DatabaseContext():
+To create pre-populated databases, use TEST_DB_URLS as parameters to a fixture
+which calls DatabaseContext():
 
-    @test.Fixture(scope="function",
-                  params=testing_databases.GetDatabaseUrls(),
-                  namer=testing_databases.DatabaseUrlNamer("my_db"))
+    @test.Fixture(scope="function", params=testing_databases.TEST_DB_URLS)
     def populated_db(request) -> Database:
       with testing_databases.DatabaseContext(Database, request.param) as db:
         with db.Session(commit=True) as session:
@@ -28,11 +24,8 @@ a fixture which calls DatabaseContext():
 """
 import contextlib
 import pathlib
-import random
-from typing import Callable
 from typing import List
 
-from deeplearning.ml4pl import filesystem_paths
 from deeplearning.ml4pl import run_id
 from labm8.py import app
 from labm8.py import sqlutil
@@ -47,54 +40,26 @@ TEST_DB_FILES = [
 ]
 
 
-def GetDatabaseUrls() -> List[str]:
-  """Enumerate a list of database URLs to use for tests.
+def EnumerateTestingDatabaseUrls() -> List[str]:
+  """Enumerate the list of database URLs to use for tests.
 
-  The databases are user-local unique, meaning that multiple fixtures can
-  each call this function to generate database URLs that do not conflict.
+  There is no need to call this, use the TEST_DB_URLS variable instead. See
+  module docstring for example usage.
 
   Returns:
     A list of database URLs.
   """
-  # Generate a unique run ID for this function invocation.
-  run_id_ = run_id.RunId.GenerateUnique(
-    f"test_{random.randint(0, int(1e8)):08d}"
-  )
-
-  # Always test with a file-backed SQLite database. Don't test with in-memory
-  # SQLite database as these don't work with multi-threaded code.
-  db_urls = [
-    f"sqlite:///{filesystem_paths.TemporaryFilePath(f'test/db/{run_id_}.db')}"
-  ]
+  # Always test with in-memory SQLite database:
+  db_urls = ["sqlite://"]
 
   for path in TEST_DB_FILES:
     if path.is_file():
-      db_urls.append(f"file://{path}?{run_id_}")
+      db_urls.append(f"file://{path}?test_{run_id.RUN_ID}")
 
   return db_urls
 
 
-def DatabaseUrlNamer(db_name: str) -> Callable[[str], str]:
-  """Return a @test.Fixture namer callback for the given database.
-
-  This produces a terse name for a database URL parameter by including only
-  the specified database name and the URL prefix.
-
-  Args:
-    db_name: The "name" for the database, e.g. 'log_db' if enumerating test
-      fixtures for logging databases.
-  """
-
-  def DatabaseUrlToName(url: str) -> str:
-    """Produce a short name for a database URL."""
-    # Resolve the actual URL, by expanding file:// URLs.
-    full_url = sqlutil.ResolveUrl(url, use_flags=False)
-
-    # Strip everything except the URL prefix, e.g. sqlite:////tmp/foo -> sqlite.
-    url_prefix = full_url.split(":")[0]
-    return f"{db_name}:{url_prefix}"
-
-  return DatabaseUrlToName
+TEST_DB_URLS = EnumerateTestingDatabaseUrls()
 
 
 def YieldDatabase(db_class, db_url: str) -> sqlutil.Database:
