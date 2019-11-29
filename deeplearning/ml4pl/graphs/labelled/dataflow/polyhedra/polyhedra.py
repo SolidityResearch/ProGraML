@@ -234,6 +234,9 @@ def MakePolyhedralGraphs(
     n: The maximum number of graphs to produce. This value is ignored and one graph
 <<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra.py
 <<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra.py
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra.py
+=======
+>>>>>>> d9a9c98fc... Add cross-references to issue tracker.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
 =======
 >>>>>>> d9a9c98fc... Add cross-references to issue tracker.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
       will be produced with all polyhedral regions annotated.
@@ -242,11 +245,14 @@ def MakePolyhedralGraphs(
     true: TODO(github.com/ChrisCummins/ProGraML/issues/2): Unused. This method
       is hardcoded to use 2-class 1-hots.
 <<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra.py
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra.py
 =======
        will be produced with all polyhedral regions annotated.
     false: TODO(cec): Unused. This method is hardcoded to use 2-class 1-hots.
     true: TODO(cec): Unused. This method is hardcoded to use 2-class 1-hots.
 >>>>>>> 085ca75b4... Export fix ups.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
+=======
+>>>>>>> d9a9c98fc... Add cross-references to issue tracker.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
 =======
 >>>>>>> d9a9c98fc... Add cross-references to issue tracker.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra.py
 

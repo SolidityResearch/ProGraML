@@ -69,6 +69,7 @@ py_library(
 
 <<<<<<< HEAD:deeplearning/ml4pl/ir/create/BUILD
 <<<<<<< HEAD:deeplearning/ml4pl/ir/create/BUILD
+<<<<<<< HEAD:deeplearning/ml4pl/ir/create/BUILD
 # TODO(github.com/ChrisCummins/ProGraML/issues/7): Linux build is broken.
 =======
 # TODO(cec): Broken.
@@ -76,6 +77,9 @@ py_library(
 =======
 # TODO(cec): Linux build is broken. Investigate later.
 >>>>>>> 8d355fc4c... Remove unused BUILD target.:deeplearning/ml4pl/bytecode/create/BUILD
+=======
+# TODO(github.com/ChrisCummins/ProGraML/issues/7): Linux build is broken.
+>>>>>>> d9a9c98fc... Add cross-references to issue tracker.:deeplearning/ml4pl/bytecode/create/BUILD
 #py_test(
 #    name = "import_from_linux_test",
 #    srcs = ["import_from_linux_test.py"],
