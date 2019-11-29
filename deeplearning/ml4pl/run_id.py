@@ -19,24 +19,13 @@ from typing import Union
 
 import sqlalchemy as sql
 
-from deeplearning.ml4pl import filesystem_paths
 from labm8.py import app
 from labm8.py import fs
 from labm8.py import system
 
 FLAGS = app.FLAGS
 
-_PREVIOUS_RUN_ID_PATH = filesystem_paths.TemporaryFilePath(
-  "previous_run_id.txt"
-)
-
-
-RUN_ID_MAX_LEN: int = 40
-RUN_ID_REGEX = re.compile(
-  r"(?P<script_name>[A-Za-z0-9_]+):"
-  r"(?P<timestamp>[0-9]{12}):"
-  r"(?P<hostname>[A-Za-z0-9]+)"
-)
+_PREVIOUS_RUN_ID_PATH = pathlib.Path("/tmp/ml4pl_previous_run_id.txt")
 
 
 class RunId(NamedTuple):
@@ -98,10 +87,8 @@ class RunId(NamedTuple):
       match.group("hostname"),
     )
 
-  @classmethod
-  def SqlStringColumn(
-    cls, default=lambda: str(RUN_ID), index: bool = True
-  ) -> sql.Column:
+  @staticmethod
+  def SqlStringColumn(default=lambda: str(RUN_ID)) -> sql.Column:
     """Generate an SQLAlchemy column which stores run IDs as strings.
 
     Args:
@@ -110,13 +97,8 @@ class RunId(NamedTuple):
         table CREATE statement.
     """
     return sql.Column(
-      cls.SqlStringColumnType(), nullable=False, default=default, index=index
+      sql.String(RUN_ID_MAX_LEN), nullable=False, default=default
     )
-
-  @staticmethod
-  def SqlStringColumnType() -> sql.String:
-    """Generate a SQL column type to store run IDs as strings."""
-    return sql.String(RUN_ID_MAX_LEN)
 
   @classmethod
   def GenerateGlobalUnique(cls) -> "RunId":
@@ -144,34 +126,11 @@ class RunId(NamedTuple):
     if forced_run_id:
       return forced_run_id
 
-    script_name = pathlib.Path(sys.argv[0]).stem
-
-    return cls.GenerateUnique(script_name)
-
-  @classmethod
-  def GenerateUnique(cls, name: str) -> "RunId":
-    """Generate a unique run ID with the given name.
-
-    The uniqueness of run IDs is provided by storing the most-recently generated
-    run ID in /tmp/ml4pl_previous_run_id.txt. If run IDs are requested at the
-    same time, their timestamps will collide, and this method will block until
-    the run ID is unique. Note the implementation is not truly atomic - there is
-    still an incredibly slight possibility of generating duplicate run IDs if
-    enough concurrent jobs attempt to grab run IDs at the same time.
-
-    Args:
-      name: The name of the run ID to generate.
-
-    Returns:
-      A run ID instance.
-    """
-    # Truncate the name if required.
-    name = name[:16]
-
     # Compute a new run ID.
+    script_name = pathlib.Path(sys.argv[0]).stem[:16]
     timestamp = time.strftime("%y%m%d%H%M%S")
     hostname = system.HOSTNAME[:12]
-    run_id = f"{name}:{timestamp}:{hostname}"
+    run_id = f"{script_name}:{timestamp}:{hostname}"
 
     # Check if there is already a run with this ID and, if required, wait.
     previous_run_id = None
@@ -183,14 +142,19 @@ class RunId(NamedTuple):
       time.sleep(1)
       return cls.GenerateGlobalUnique()
 
-    _PREVIOUS_RUN_ID_PATH.parent.mkdir(exist_ok=True, parents=True)
     fs.Write(_PREVIOUS_RUN_ID_PATH, run_id.encode("utf-8"))
 
-    return RunId.FromString(run_id)
+    return run_id
 
 
 # The public variables:
+RUN_ID_MAX_LEN: int = 40
 RUN_ID: RunId = RunId.GenerateGlobalUnique()
+RUN_ID_REGEX = re.compile(
+  r"(?P<script_name>[a-z0-9]+):"
+  r"(?P<timestamp>[0-9]{12}):"
+  r"(?P<hostname>[a-z0-9]+)"
+)
 
 
 def Main():
