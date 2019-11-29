@@ -2,7 +2,7 @@
 
 syntax = "proto2";
 
-package ml4pl;
+package phd.deeplearning.ml4pl;
 
 // A program graph.
 message ProgramGraph {
@@ -11,19 +11,11 @@ message ProgramGraph {
   repeated Function function = 3;
 
   // Optional vectors of graph-level features and labels.
-  repeated int64 x = 5;
-  repeated int64 y = 6;
+  repeated int32 discrete_x = 4;
+  repeated int32 discrete_y = 6;
 
-  // Optional fields for encoding data flow annotations.
-  //
-  // For iterative data flow analyses which have a defined "starting point",
-  // this is the index into the node list of that starting point.
-  optional int32 data_flow_root_node = 7;
-  // For iterative data flow analyses, this is the number of steps that the data
-  // flow analysis required to compute the annotations.
-  optional int32 data_flow_steps = 8;
-  // The number of nodes with "positive" analysis results.
-  optional int32 data_flow_positive_node_count = 9;
+  repeated float real_x = 5;
+  repeated float real_y = 7;
 }
 
 message Function {
@@ -34,37 +26,40 @@ message Function {
 message Node {
   // The node type.
   enum Type {
-    STATEMENT = 0;
-    IDENTIFIER = 1;
-    IMMEDIATE = 2;
+    STATEMENT = 1;
+    IDENTIFIER = 2;
+    IMMEDIATE = 3;
   }
   required Type type = 1;
-
-  // The text of a node. This is the raw representation of a node, such as the
-  // contents of a statement, or the name of an identifier.
-  required string text = 2;
-
-  // The pre-processed text of a node. This is the
-  required string preprocessed_text = 3;
 
   // An index into the ProgramGraph.function list indicating the source function
   // for this node. Omitting this fields means the node does not belong to a
   // function, such as the case for global identifiers.
-  optional int32 function = 4;
+  optional int32 function = 2;
+
+  // The text of a node. This is the raw representation of a node, such as the
+  // contents of a statement, or the name of an identifier.
+  optional string text = 3;
+
+  // The pre-processed text of a node. This is the
+  optional string preprocessed_text = 4;
 
   // Optional vectors of node-level features and labels.
-  repeated int64 x = 5;
-  repeated int64 y = 6;
+  repeated int64 discrete_x = 5;
+  repeated float discrete_y = 7;
+
+  repeated int64 real_x = 6;
+  repeated float real_y = 8;
 }
 
 message Edge {
-  // The edge flow type.
-  enum Flow {
-    CONTROL = 0;
-    DATA = 1;
-    CALL = 2;
+  // The edge type.
+  enum Type {
+    CONTROL = 1;
+    DATA = 2;
+    CALL = 3;
   }
-  required Flow flow = 1;
+  required Type type = 1;
 
   // The source and destination nodes of the edge, as andicies into a
   // ProgramGraph.node list.
@@ -73,9 +68,4 @@ message Edge {
 
   // The position of an edge.
   required int32 position = 4 [default=0];
-}
-
-// A collection of program graphs.
-message ProgramGraphs {
-  repeated ProgramGraph graph = 1;
 }
