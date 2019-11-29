@@ -1,144 +1,11 @@
-"""Utility functions for working with program graphs.
-
-When executed as a binary, this program reads a single program graph from
-stdin, and writes a the same graph to stdout. Use --stdin_fmt and --stdout_fmt
-to convert between different graph types.
-
-Example usage:
-
-  Convert a binary protocol buffer to a text version:
-
-    $ bazel run //deeplearning/ml4pl/graphs:programl -- \
-        --stdin_fmt=pb \
-        --stdout_fmt=pbtxt \
-        < /tmp/proto.pb > /tmp/proto.pbtxt
-"""
-import enum
-import sys
-from typing import List
-from typing import Optional
-
+"""Utility functions for working with program graph protos."""
 import networkx as nx
 import numpy as np
 
 from deeplearning.ml4pl.graphs import programl_pb2
 from labm8.py import app
-from labm8.py import pbutil
 
 FLAGS = app.FLAGS
-
-
-class InputOutputFormat(enum.Enum):
-  """The input/output format for converting protocol buffer to byte strings."""
-
-  # A binary protocol buffer.
-  PB = 1
-  # A text protocol buffer.
-  PBTXT = 2
-
-
-app.DEFINE_enum(
-  "stdin_fmt",
-  InputOutputFormat,
-  InputOutputFormat.PBTXT,
-  "The format for input program graph.",
-)
-app.DEFINE_enum(
-  "stdout_fmt",
-  InputOutputFormat,
-  InputOutputFormat.PBTXT,
-  "The format for output program graphs.",
-)
-
-
-class GraphBuilder(object):
-  """A helper object for constructing a well-formed program graph."""
-
-  def __init__(
-    self, x: Optional[List[int]] = None, y: Optional[List[int]] = None
-  ):
-    """Create a new graph.
-
-    Args:
-      x: A list of graph features.
-      y: A list of graph labels.
-    """
-    self.g = nx.MultiDiGraph()
-    self.g.graph["x"] = x or []
-    self.g.graph["y"] = y or []
-
-    self.last_node_index = -1
-    self.last_function_counter = 0
-    self.functions: List[str] = []
-
-  @property
-  def proto(self) -> programl_pb2.ProgramGraph:
-    """Access the program graph as a protocol buffer."""
-    return NetworkXToProgramGraph(self.g)
-
-  def AddFunction(self, name: Optional[str] = None) -> str:
-    """Create a new function and return its name.
-
-    Args:
-      name: The function name. If not given, one is generated.
-
-    Returns:
-      The function name.
-    """
-    if name is None:
-      self.last_function_counter += 1
-      name = f"fn_{self.last_function_counter:06d}"
-    self.functions.append(name)
-    return name
-
-  def AddNode(
-    self,
-    type: programl_pb2.Node.Type = programl_pb2.Node.STATEMENT,
-    text: str = "",
-    preprocessed_text: str = "",
-    function: Optional[str] = None,
-    x: Optional[List[int]] = None,
-    y: Optional[List[int]] = None,
-  ) -> int:
-    """Construct a new node.
-
-    Args:
-      type: The node type.
-      text: The node text.
-      preprocessed_text: The preprocessed node text.
-      function: The name of a function created using AddFunction().
-      x: A list of node features.
-      y: A list of node labels.
-
-    Returns:
-      The integer index of the node.
-    """
-    self.last_node_index += 1
-    self.g.add_node(
-      self.last_node_index,
-      type=type,
-      x=x or [],
-      y=y or [],
-      text=text,
-      function=function,
-      preprocessed_text=preprocessed_text,
-    )
-    return self.last_node_index
-
-  def AddEdge(
-    self,
-    source_node_index: int,
-    destination_node_index: int,
-    flow: programl_pb2.Edge.Flow = programl_pb2.Edge.CONTROL,
-    position: int = 0,
-  ):
-    self.g.add_edge(
-      source_node_index,
-      destination_node_index,
-      flow=flow,
-      position=position,
-      key=flow,
-    )
 
 
 def ProgramGraphToNetworkX(proto: programl_pb2) -> nx.MultiDiGraph:
@@ -150,19 +17,20 @@ def ProgramGraphToNetworkX(proto: programl_pb2) -> nx.MultiDiGraph:
   The mapping from protocol buffer fields to networkx graph attributes is:
 
   Graph:
-      * x (List[int]): ProgramGraph.x
-      * y (List[int]): ProgramGraph.y
-      * data_flow_root_node: ProgramGraph.data_flow_root_node
-      * data_flow_steps: ProgramGraph.data_flow_steps
-      * data_flow_positive_node_count: ProgramGraph.data_flow_positive_node_count
+      * discrete_x (Optional, np.array of np.int32): ProgramGraph.discrete_x
+      * discrete_y (Optional, np.array of np.int32): ProgramGraph.discrete_y
+      * real_x (Optional, np.array of np.float32): ProgramGraph.real_x
+      * real_y (Optional, np.array of np.float32): ProgramGraph.real_y
 
   Nodes:
       * type (Node.Type enum): Node.type
       * text (str): Node.text
       * preprocessed_text (str): Node.preprocessed_text
-      * function (Union[str, None]): Function.name
-      * x (List[int]): Node.x
-      * y (List[int]): Node.y
+      * function (Optional, str): Function.name
+      * discrete_x (Optional, np.array of np.int32): Node.discrete_x
+      * discrete_y (Optional, np.array of np.int32): Node.discrete_y
+      * real_x (Optional, np.array of np.float32): Node.real_x
+      * real_y (Optional, np.array of np.float32): Node.real_y
 
   Edges:
       * flow (Edge.Flow enum): Edge.flow
@@ -171,32 +39,33 @@ def ProgramGraphToNetworkX(proto: programl_pb2) -> nx.MultiDiGraph:
   g = nx.MultiDiGraph()
 
   # Add graph-level features and labels.
-  g.graph["x"] = list(proto.x)
-  g.graph["y"] = list(proto.y)
-  if proto.HasField("data_flow_root_node"):
-    g.graph["data_flow_root_node"] = proto.data_flow_root_node
-  if proto.HasField("data_flow_steps"):
-    g.graph["data_flow_steps"] = proto.data_flow_steps
-  if proto.HasField("data_flow_positive_node_count"):
-    g.graph[
-      "data_flow_positive_node_count"
-    ] = proto.data_flow_positive_node_count
+  if proto.discrete_x:
+    g.graph["discrete_x"] = np.array(proto.discrete_x, dtype=np.int32)
+  if proto.discrete_y:
+    g.graph["discrete_y"] = np.array(proto.discrete_y, dtype=np.int32)
+  if proto.real_x:
+    g.graph["real_x"] = np.array(proto.real_x, dtype=np.float32)
+  if proto.real_y:
+    g.graph["real_y"] = np.array(proto.real_y, dtype=np.float32)
 
   # Build the nodes.
   for i, node in enumerate(proto.node):
-    g.add_node(
-      i,
-      type=node.type,
-      text=node.text,
-      preprocessed_text=node.preprocessed_text,
-      function=(
-        proto.function[node.function].name
-        if node.HasField("function")
-        else None
-      ),
-      x=list(node.x),
-      y=list(node.y),
-    )
+    data = {
+      "type": node.type,
+      "text": node.text,
+      "preprocessed_text": node.preprocessed_text,
+    }
+    if node.HasField("function"):
+      data["function"]: str = proto.function[node.function].name
+    if node.discrete_x:
+      data["discrete_x"] = np.array(node.discrete_x, dtype=np.int32)
+    if node.discrete_y:
+      data["discrete_y"] = np.array(node.discrete_y, dtype=np.int32)
+    if node.real_x:
+      data["real_x"] = np.array(node.real_x, dtype=np.float32)
+    if node.real_y:
+      data["real_y"] = np.array(node.real_y, dtype=np.float32)
+    g.add_node(i, **data)
 
   # Build the edges.
   for edge in proto.edge:
@@ -207,29 +76,24 @@ def ProgramGraphToNetworkX(proto: programl_pb2) -> nx.MultiDiGraph:
       position=edge.position,
     )
 
+  app.Log(
+    1, "ProgramGraphToNetworkX PROTO FUNCTION COUNT %s", len(proto.function)
+  )
+  app.Log(
+    1,
+    "ProgramGraphToNetworkX GRAPH FUNCTION COUNT %s",
+    len(set(fn for _, fn in g.nodes(data="function") if fn)),
+  )
+
   return g
 
 
-def NetworkXToProgramGraph(
-  g: nx.MultiDiGraph,
-  proto: Optional[programl_pb2.ProgramGraph] = None,
-  **proto_fields,
-) -> programl_pb2.ProgramGraph:
+def NetworkXToProgramGraph(g: nx.MultiDiGraph) -> programl_pb2.ProgramGraph:
   """Perform the inverse transformation from networkx graph -> protobuf.
 
   See ProgramGraphToNetworkX() for details.
-
-  Arguments:
-    g: A networkx graph.
-    proto: An optional protocol buffer instance to use. Else a new one is
-      created. Calling code is reponsible for clearning the protocol buffer.
-    **proto_fields: Optional keyword arguments to use when constructing a proto.
-      Has no effect if proto argument is set.
-
-  Returns:
-    A ProgramGraph proto instance.
   """
-  proto = proto or programl_pb2.ProgramGraph(**proto_fields)
+  proto = programl_pb2.ProgramGraph()
 
   # Create a map from function name to function ID.
   function_names = list(
@@ -243,16 +107,14 @@ def NetworkXToProgramGraph(
     function_proto.name = function_name
 
   # Set the graph-level features and labels.
-  proto.x[:] = np.array(g.graph["x"], dtype=np.int64).tolist()
-  proto.y[:] = np.array(g.graph["y"], dtype=np.int64).tolist()
-  if "data_flow_root_node" in g.graph:
-    proto.data_flow_root_node = g.graph["data_flow_root_node"]
-  if "data_flow_steps" in g.graph:
-    proto.data_flow_steps = g.graph["data_flow_steps"]
-  if "data_flow_positive_node_count" in g.graph:
-    proto.data_flow_positive_node_count = g.graph[
-      "data_flow_positive_node_count"
-    ]
+  if "discrete_x" in g.graph:
+    proto.discrete_x[:] = g.graph["discrete_x"].tolist()
+  if "discrete_y" in g.graph:
+    proto.discrete_y[:] = g.graph["discrete_y"].tolist()
+  if "real_x" in g.graph:
+    proto.real_x[:] = g.graph["real_x"].tolist()
+  if "real_y" in g.graph:
+    proto.real_y[:] = g.graph["real_y"].tolist()
 
   # Create the node list.
   for node, data in g.nodes(data=True):
@@ -260,10 +122,16 @@ def NetworkXToProgramGraph(
     node_proto.type = data["type"]
     node_proto.text = data["text"]
     node_proto.preprocessed_text = data["preprocessed_text"]
-    if data["function"] is not None:
+    if "function" in data:
       node_proto.function = function_to_idx_map[data["function"]]
-    node_proto.x[:] = np.array(data["x"], dtype=np.int64).tolist()
-    node_proto.y[:] = np.array(data["y"], dtype=np.int64).tolist()
+    if "discrete_x" in data:
+      node_proto.discrete_x[:] = data["discrete_x"].tolist()
+    if "discrete_y" in data:
+      node_proto.discrete_y[:] = data["discrete_y"].tolist()
+    if "real_x" in data:
+      node_proto.real_x[:] = data["real_x"].tolist()
+    if "real_y" in data:
+      node_proto.real_y[:] = data["real_y"].tolist()
 
   # Create the edge list.
   for src, dst, data in g.edges(data=True):
@@ -274,76 +142,3 @@ def NetworkXToProgramGraph(
     edge_proto.position = data["position"]
 
   return proto
-
-
-def FromBytes(
-  data: bytes,
-  fmt: InputOutputFormat,
-  proto: Optional[programl_pb2.ProgramGraph] = None,
-  empty_okay: bool = False,
-) -> programl_pb2.ProgramGraph:
-  """Decode a byte array to a program graph proto.
-
-  Args:
-    data: The binary data to decode.
-    fmt: The format of the binary data.
-    empty_okay: If False, raise an error if the protocol buffer is not
-      initialized, or contains no nodes.
-
-  Returns:
-    A program graph protocol buffer.
-  """
-  proto = proto or programl_pb2.ProgramGraph()
-  if fmt == InputOutputFormat.PB:
-    proto.ParseFromString(data)
-  elif fmt == InputOutputFormat.PBTXT:
-    pbutil.FromString(data.decode("utf-8"), proto)
-  else:
-    raise ValueError(f"Unknown program graph format: {fmt}")
-
-  if not empty_okay:
-    if not proto.IsInitialized():
-      raise ValueError("Program graph is uninitialized")
-    if not proto.node:
-      raise ValueError("Program graph contains no nodes")
-
-  return proto
-
-
-def ToBytes(
-  program_graph: programl_pb2.ProgramGraph, fmt: InputOutputFormat
-) -> bytes:
-  """Convert a program graph to a byte array.
-
-  Args:
-    program_graph: A program graph.
-    fmt: The desired binary format.
-
-  Returns:
-    A byte array.
-  """
-  if fmt == InputOutputFormat.PB:
-    return program_graph.SerializeToString()
-  elif fmt == InputOutputFormat.PBTXT:
-    return str(program_graph).encode("utf-8")
-  else:
-    raise ValueError(f"Unknown program graph format: {fmt}")
-
-
-def ReadStdin() -> programl_pb2.ProgramGraph:
-  """Read a program graph from stdin using --stdin_fmt."""
-  return FromBytes(sys.stdin.buffer.read(), FLAGS.stdin_fmt())
-
-
-def WriteStdout(proto: pbutil.ProtocolBuffer) -> None:
-  """Write a graph to stdout using --stdout_fmt."""
-  sys.stdout.buffer.write(ToBytes(proto, FLAGS.stdout_fmt()))
-
-
-def Main():
-  """Main entry point."""
-  WriteStdout(ReadStdin())
-
-
-if __name__ == "__main__":
-  app.Run(Main)
