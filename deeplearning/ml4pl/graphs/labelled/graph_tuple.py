@@ -1,7 +1,4 @@
 """The module implements conversion of graphs to tuples of arrays."""
-import pathlib
-import pickle
-from typing import Iterable
 from typing import List
 from typing import NamedTuple
 from typing import Optional
@@ -10,7 +7,6 @@ from typing import Tuple
 import networkx as nx
 import numpy as np
 
-from deeplearning.ml4pl.graphs import programl
 from deeplearning.ml4pl.graphs import programl_pb2
 from labm8.py import app
 
@@ -18,10 +14,12 @@ FLAGS = app.FLAGS
 
 
 class GraphTuple(NamedTuple):
-  """The graph tuple: a compact representation of one or more graphs.
+  """The graph tuple: a compact representation of a labelled graph for machine
+  learning.
 
-  The transformation of ProgramGraph protocol buffer to GraphTuples is lossy
-  (omitting attributes such as node types and texts).
+  The transformation of ProgramGraph protocol buffer to GraphTuple is lossy
+  (omitting attributes such as node text), and is partly specialized to the
+  machine learning tasks that we have considered so far.
 
   See <github.com/ChrisCummins/ProGraML/issues/22>.
   """
@@ -29,11 +27,11 @@ class GraphTuple(NamedTuple):
   # A list of adjacency lists, one for each flow type, where an entry in an
   # adjacency list is a <src,dst> tuple of node indices.
   # Shape (edge_flow_count, edge_count, 2), dtype int32:
-  adjacencies: np.array
+  adjacency_lists: np.array
 
   # A list of edge positions, one for each edge type. An edge position is an
   # integer in the range 0 <= x < edge_position_max.
-  # Shape (edge_flow_count, edge_count), dtype int32:
+  # Shape (edge_type_count, edge_count), dtype int32:
   edge_positions: np.array
 
   # A list of node feature arrays. Each row is a node, and each column is an
@@ -46,36 +44,12 @@ class GraphTuple(NamedTuple):
   node_y: Optional[np.array] = None
 
   # (optional) A list of graph features arrays.
-  # Shape (graph_x_dimensionality) OR (graph_count, graph_x_dimensionality) if
-  # graph_count > 1, dtype int32:
+  # Shape (graph_x_dimensionality), dtype int32:
   graph_x: Optional[np.array] = None
 
   # (optional) A vector of graph labels arrays.
-  # Shape (graph_y_dimensionality) OR (graph_count, graph_y_dimensionality) if
-  # graph_count > 1, dtype float32:
+  # Shape (graph_y_dimensionality), dtype float32:
   graph_y: Optional[np.array] = None
-
-  ##############################################################################
-  # Disjoint graph properties
-  ##############################################################################
-
-  # The number of disconnected graphs in the tuple.
-  disjoint_graph_count: int = 1
-
-  # A list of integers which segment the nodes by graph. E.g. with a GraphTuple
-  # of two distinct graphs, both with three nodes, nodes_list will be
-  # [0, 0, 0, 1, 1, 1].
-  # Shape (node_count), dtype int32:
-  disjoint_nodes_list: np.array = None
-
-  @property
-  def is_disjoint_graph(self) -> bool:
-    """Return whether the graph tuple is disjoint."""
-    return self.disjoint_nodes_list is not None
-
-  ##############################################################################
-  # Properties
-  ##############################################################################
 
   @property
   def node_count(self) -> int:
@@ -84,28 +58,13 @@ class GraphTuple(NamedTuple):
 
   @property
   def edge_count(self) -> int:
-    """Return the total number of edges of all flow types."""
-    return sum(len(adjacency_list) for adjacency_list in self.adjacencies)
-
-  @property
-  def control_edge_count(self) -> int:
-    return self.adjacencies[programl_pb2.Edge.CONTROL].shape[0]
-
-  @property
-  def data_edge_count(self) -> int:
-    return self.adjacencies[programl_pb2.Edge.DATA].shape[0]
-
-  @property
-  def call_edge_count(self) -> int:
-    return self.adjacencies[programl_pb2.Edge.CALL].shape[0]
+    """Return the number of edges."""
+    return self.adjacency_lists.shape[0]
 
   @property
   def edge_position_max(self) -> int:
     """Return the maximum edge position."""
-    return max(
-      position_list.max() if position_list.size else 0
-      for position_list in self.edge_positions
-    )
+    return max(self.edge_positions)
 
   @property
   def has_node_y(self) -> bool:
@@ -135,116 +94,19 @@ class GraphTuple(NamedTuple):
   @property
   def graph_x_dimensionality(self) -> int:
     """Return the dimensionality of graph features."""
-    # Disjoint graphs have a list of feature vectors, one for each graph.
-    if self.has_graph_x and self.is_disjoint_graph:
-      return self.graph_x.shape[1]
-    elif self.has_graph_x:
-      return self.graph_x.shape[0]
-    else:
-      return 0
+    return self.graph_x.shape[1] if self.has_graph_x else 0
 
   @property
   def graph_y_dimensionality(self) -> int:
     """Return the dimensionality of graph labels."""
-    # Disjoint graphs have a list of label vectors, one for each graph.
-    if self.has_graph_y and self.is_disjoint_graph:
-      return self.graph_y.shape[1]
-    elif self.has_graph_y:
-      return self.graph_y.shape[0]
-    else:
-      return 0
-
-  def SetFeaturesAndLabels(
-    self,
-    node_x=None,
-    node_y=None,
-    graph_x=None,
-    graph_y=None,
-    copy: bool = True,
-  ) -> "GraphTuple":
-    """Create a graph tuple with new features and labels.
-
-    Args:
-      node_x: New node features. If not provided, the original features are
-        preserved.
-      node_y: New node labels.
-      node_x: New graph features. If not provided, the original features are
-        preserved.
-      graph_y: New graph labels.
-      copy: If true, copy the underlying numpy arrays from the existing graph
-        tuple. Else, the new graph tuple references the old one, meaning that
-        modifications to either will be reflected on both.
-
-    Returns:
-      A graph tuple instance.
-    """
-    # Check that the user provided new labels.
-    if (
-      node_x is None and node_y is None and graph_x is None and graph_y is None
-    ):
-      raise ValueError("Must set new features or labels")
-
-    # If replacing existing labels, check that they have the same size.
-    if (
-      self.node_y is not None
-      and node_y is not None
-      and node_y.shape != self.node_y.shape
-    ):
-      raise TypeError(
-        f"New node_y shape {node_y.shape} does not match "
-        f"existing shape {self.node_y.shape}"
-      )
-    if (
-      self.graph_y is not None
-      and graph_y is not None
-      and graph_y.shape != self.graph_y.shape
-    ):
-      raise TypeError(
-        f"New graph_y shape {graph_y.shape} does not match "
-        f"existing shape {self.graph_y.shape}"
-      )
-
-    def ByValueOrByRef(x: Optional[np.array]) -> Optional[np.array]:
-      """Determine whether to copy the underlying numpy arrays or create new
-      references to them.
-      """
-      if copy and x is not None:
-        return np.copy(x)
-      else:
-        return x
-
-    return GraphTuple(
-      adjacencies=ByValueOrByRef(self.adjacencies),
-      edge_positions=ByValueOrByRef(self.edge_positions),
-      node_x=ByValueOrByRef(self.node_x if node_x is None else node_x),
-      node_y=ByValueOrByRef(node_y),
-      graph_x=ByValueOrByRef(self.graph_x if graph_x is None else graph_x),
-      graph_y=ByValueOrByRef(graph_y),
-    )
-
-  ##############################################################################
-  # Factory methods
-  ##############################################################################
-
-  @staticmethod
-  def FromFile(path: pathlib.Path):
-    """Construct a graph tuple from a file generated by ToFile().
-
-    Args:
-      path: The path of the file to read.
-
-    Returns:
-      A GraphTuple instance.
-    """
-    with open(path, "rb") as f:
-      return pickle.load(f)
+    return self.graph_y.shape[1] if self.has_graph_y else 0
 
   @classmethod
   def CreateFromNetworkX(cls, g: nx.MultiDiGraph) -> "GraphTuple":
     """Construct a graph tuple from a networkx graph.
 
     Args:
-      g: The graph to convert to a graph. See
+      g: The graph to convert to a graph_tuple. See
         deeplearning.ml4pl.graphs.programl.ProgramGraphToNetworkX() for a
         description of the networkx format.
 
@@ -252,34 +114,32 @@ class GraphTuple(NamedTuple):
       A GraphTuple instance.
     """
     # Create an adjacency list for each edge type.
-    # {control, data, call} types.
-    adjacencies: List[List[Tuple[int, int]]] = [
+    adjacency_lists: List[List[Tuple[int, int]]] = [
       [],
       [],
-      [],
+      [],  # {control, data, call} types.
     ]
     # Create an edge position list for each edge type.
-    # {control, data, call} types.
     edge_positions: List[List[int]] = [
       [],
       [],
-      [],
+      [],  # {control, data, call} types.
     ]
 
     # Build the adjacency and positions lists.
     for src, dst, data in g.edges(data=True):
-      adjacencies[data["flow"]].append((src, dst))
+      adjacency_lists[data["flow"]].append((src, dst))
       edge_positions[data["flow"]].append(data["position"])
 
     # Convert the edge lists to numpy arrays.
-    # Shape (edge_flow_count, edge_count, 2):
-    for i in range(len(adjacencies)):
-      if len(adjacencies[i]):
-        adjacencies[i] = np.array(adjacencies[i], dtype=np.int32)
-      else:
-        adjacencies[i] = np.zeros((0, 2), dtype=np.int32)
-
-    # Shape (edge_flow_count, edge_count):
+    # Shape (edge_count, 2):
+    adjacency_lists = np.array(
+      [
+        np.array(adjacency_list, dtype=np.int32)
+        for adjacency_list in adjacency_lists
+      ]
+    )
+    # Shape (edge_count, 1):
     edge_positions = np.array(
       [
         np.array(edge_position, dtype=np.int32)
@@ -287,146 +147,46 @@ class GraphTuple(NamedTuple):
       ]
     )
 
-    # Set the node features.
+    # Note(github.com/ChrisCummins/ProGraML/issues/22): Hardcoded to support
+    # only discrete node features, real-valued node labels, discrete graph
+    # features, and discrete graph labels.
+
+    # Set the node embedding indices.
     node_x = [None] * g.number_of_nodes()
-    for node, x in g.nodes(data="x"):
-      node_x[node] = np.array(x, dtype=np.int64)
-    # Shape (node_count, node_x_dimensionality):
+    for node, discrete_x in g.nodes(data="discrete_x"):
+      node_x[node] = np.array(discrete_x, dtype=np.int32)
+    # Shape (node_count, node_x_count):
     node_x = np.vstack(node_x)
 
     # Set the node labels.
     node_targets = [None] * g.number_of_nodes()
-    node_y = None
-    for node, y in g.nodes(data="y"):
-      # Node labels are optional. If there are no labels, break.
-      if not y:
-        break
-      node_targets[node] = y
-    else:
-      # Shape (node_count, node_y_dimensionality):
-      node_y = np.vstack(node_targets).astype(np.int64)
+    for node, real_y in g.nodes(data="real_y"):
+      node_targets[node] = real_y
+    # Shape (node_count, node_real_y_count):
+    node_y = np.vstack(node_targets)
 
     # Get the optional graph-level features and labels.
-    graph_x = np.array(g.graph["x"], dtype=np.int64) if g.graph["x"] else None
-    graph_y = np.array(g.graph["y"], dtype=np.int64) if g.graph["y"] else None
+    graph_x = (
+      np.array(g.graph["discrete_x"], dtype=np.int32)
+      if g.graph["discrete_x"]
+      else None
+    )
+    graph_y = (
+      np.array(g.graph["discrete_y"], dtype=np.int32)
+      if g.graph["discrete_y"]
+      else None
+    )
+
+    # End of specialised tuple representation.
 
     return GraphTuple(
-      adjacencies=np.array(adjacencies),
+      adjacency_lists=adjacency_lists,
       edge_positions=edge_positions,
       node_x=node_x,
       node_y=node_y,
       graph_x=graph_x,
       graph_y=graph_y,
     )
-
-  @classmethod
-  def CreateFromProgramGraph(cls, program_graph: programl_pb2.ProgramGraph):
-    # TODO(github.com/ChrisCummins/ProGraML/issues/31): Perform the conversion
-    # directly.
-    return cls.CreateFromNetworkX(
-      programl.ProgramGraphToNetworkX(program_graph)
-    )
-
-  @classmethod
-  def FromGraphTuples(
-    cls, graph_tuples: Iterable["GraphTuple"]
-  ) -> "GraphTuple":
-    """Construct a graph tuple by merging multiple tuples into a single
-    disjoint graph.
-
-    Args:
-      graph_tuples: The tuples to combine.
-
-    Returns:
-      A GraphTuple instance.
-    """
-    adjacencies: List[List[Tuple[int, int]]] = [[], [], []]
-    edge_positions: List[List[int]] = [[], [], []]
-    disjoint_nodes_list: List[List[int]] = []
-
-    node_x: List[List[int]] = []
-    node_y: List[List[int]] = []
-    graph_x: List[List[int]] = []
-    graph_y: List[List[int]] = []
-
-    disjoint_graph_count = 0
-    node_count = 0
-
-    # Iterate over each graph, merging them.
-    for graph in graph_tuples:
-      disjoint_nodes_list.append(
-        np.full(
-          shape=[graph.node_count],
-          fill_value=disjoint_graph_count,
-          dtype=np.int32,
-        )
-      )
-
-      for edge_flow, (adjacency_list, position_list) in enumerate(
-        zip(graph.adjacencies, graph.edge_positions)
-      ):
-        if adjacency_list.size:
-          # Offset the adjacency list node indices.
-          offset = np.array((node_count, node_count), dtype=np.int32)
-          adjacencies[edge_flow].append(adjacency_list + offset)
-          edge_positions[edge_flow].append(position_list)
-
-      # Add features and labels.
-
-      # Shape (graph.node_count, node_x_dimensionality):
-      node_x.extend(graph.node_x)
-
-      if graph.has_node_y:
-        # Shape (graph.node_count, node_y_dimensionality):
-        node_y.extend(graph.node_y)
-
-      if graph.has_graph_x:
-        graph_x.append(graph.graph_x)
-
-      if graph.has_graph_y:
-        graph_y.append(graph.graph_y)
-
-      # Update the counters.
-      disjoint_graph_count += 1
-      node_count += graph.node_count
-
-    # Concatenate and convert lists to numpy arrays.
-    for i in range(len(adjacencies)):
-      if len(adjacencies[i]):
-        adjacencies[i] = np.concatenate(adjacencies[i])
-      else:
-        adjacencies[i] = np.zeros((0, 2), dtype=np.int32)
-
-      if len(edge_positions[i]):
-        edge_positions[i] = np.concatenate(edge_positions[i])
-      else:
-        edge_positions[i] = np.array([], dtype=np.int32)
-
-    return cls(
-      adjacencies=np.array(adjacencies),
-      edge_positions=np.array(edge_positions),
-      node_x=np.array(node_x, dtype=np.int64),
-      node_y=np.array(node_y, dtype=np.int64) if node_y else None,
-      graph_x=np.array(graph_x, dtype=np.int64) if graph_x else None,
-      graph_y=np.array(graph_y, dtype=np.int64) if graph_y else None,
-      disjoint_graph_count=disjoint_graph_count,
-      disjoint_nodes_list=np.concatenate(disjoint_nodes_list),
-    )
-
-  ##############################################################################
-  # Convertor methods
-  ##############################################################################
-
-  def ToFile(self, path: pathlib.Path) -> None:
-    """Dump the pickled graph tuple to file.
-
-    This is lossy, as the ir_id column is not dumped.
-
-    Args:
-      path: The path of the graph tuple to write.
-    """
-    with open(path, "wb") as f:
-      pickle.dump(self, f)
 
   def ToNetworkx(self) -> nx.MultiDiGraph:
     """Construct a networkx graph from a graph tuple.
@@ -440,118 +200,28 @@ class GraphTuple(NamedTuple):
 
     # Reconstruct the graph edges.
     for flow, (adjacency_list, position_list) in enumerate(
-      zip(self.adjacencies, self.edge_positions)
+      zip(self.adjacency_lists, self.edge_positions)
     ):
       for (src, dst), position in zip(adjacency_list, position_list):
-        g.add_edge(src, dst, key=flow, flow=flow, position=position)
+        g.add_edge(src, dst, flow=programl_pb2.Edge(flow), position=position)
+
+    # Note(github.com/ChrisCummins/ProGraML/issues/22): Hardcoded to support
+    # only discrete node features, real-valued node labels, discrete graph
+    # features, and discrete graph labels.
 
     for i, x in enumerate(self.node_x):
-      g.nodes[i]["x"] = x.tolist()
+      g.nodes[i]["discrete_x"] = x.tolist()
 
     if self.has_node_y:
       for i, y in enumerate(self.node_y):
-        g.nodes[i]["y"] = y.tolist()
-    else:
-      for node, data in g.nodes(data=True):
-        data["y"] = []
+        g.nodes[i]["real_y"] = y.tolist()
 
-    g.graph["x"] = self.graph_x.tolist() if self.has_graph_x else []
-    g.graph["y"] = self.graph_y.tolist() if self.has_graph_y else []
+    if self.has_graph_x:
+      g.graph["discrete_x"] = self.graph_x
+
+    if self.has_graph_y:
+      g.graph["discrete_y"] = self.graph_y
+
+    # End of specialised tuple representation.
 
     return g
-
-  def ToGraphTuples(self) -> Iterable["GraphTuple"]:
-    """Perform the inverse transformation from disjoint graph to a list of
-    individual graph tuples.
-
-    Returns:
-      An iterable of graph instances.
-
-    Raises:
-      ValueError: If the graph tuple is not disjoint, or if the graph tuple
-        is invalid.
-    """
-    if not self.is_disjoint_graph:
-      raise ValueError("ToGraphTuples() called on non-disjoint graph tuple")
-
-    # Split the list of node indices into individual lists for each graph.
-    graph_split_indices = (
-      np.where(self.disjoint_nodes_list[:-1] != self.disjoint_nodes_list[1:])[0]
-      + 1
-    )
-    if len(graph_split_indices) + 1 != self.disjoint_graph_count:
-      raise ValueError(
-        f"Graph tuple contains {self.disjoint_graph_count} disjoint "
-        f"graphs but only found {len(graph_split_indices) + 1} "
-        "splits"
-      )
-    # Shape (disjoint_graph_count, ?), dtype=np.int32.
-    nodes_per_graph = np.split(self.disjoint_nodes_list, graph_split_indices)
-
-    # The starting index of the node.
-    node_offset = 0
-
-    # Iterate over the per-graph list of nodes.
-    for current_graph, graph_node_count in enumerate(
-      [len(n) for n in nodes_per_graph]
-    ):
-
-      # Per-flow edge attributes.
-      adjacencies = [None, None, None]
-      edge_positions = [None, None, None]
-
-      for edge_flow, (adjacency_list, position_list) in enumerate(
-        zip(self.adjacencies, self.edge_positions)
-      ):
-        # No edges of this type in the entire graph batch.
-        if not adjacency_list.size:
-          continue
-
-        # The adjacency list contains the adjacencies for all graphs. Determine
-        # those that are in this graph by selecting only those with a source
-        # node in the list of this graph's nodes.
-        srcs = adjacency_list[:, 0]
-        edge_indicies = np.where(
-          np.logical_and(
-            srcs >= node_offset, srcs < node_offset + graph_node_count
-          )
-        )
-
-        adjacencies[edge_flow] = adjacency_list[edge_indicies]
-        edge_positions[edge_flow] = position_list[edge_indicies]
-
-        # Negate the positive offset into the adjacency lists.
-        offset = np.array((node_offset, node_offset), dtype=np.int32)
-        adjacencies[edge_flow] -= offset
-
-      # Read node features.
-      current_node_x = self.node_x[node_offset : node_offset + graph_node_count]
-      if len(current_node_x) != graph_node_count:
-        raise ValueError(
-          f"Graph has {len(current_node_x)} nodes but expected "
-          f"{graph_node_count}"
-        )
-
-      # Read optional node labels.
-      if self.has_node_y:
-        current_node_y = self.node_y[
-          node_offset : node_offset + graph_node_count
-        ]
-        if len(current_node_y) != graph_node_count:
-          raise ValueError(
-            f"Graph has {len(current_node_y)} nodes but expected "
-            f"{graph_node_count}"
-          )
-      else:
-        current_node_y = None
-
-      yield GraphTuple(
-        adjacencies=np.array(adjacencies),
-        edge_positions=np.array(edge_positions),
-        node_x=current_node_x,
-        node_y=current_node_y,
-        graph_x=self.graph_x[current_graph] if self.has_graph_x else None,
-        graph_y=self.graph_y[current_graph] if self.has_graph_y else None,
-      )
-
-      node_offset += graph_node_count
