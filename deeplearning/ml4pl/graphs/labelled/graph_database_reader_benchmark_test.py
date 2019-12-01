@@ -26,11 +26,7 @@ def CreateRandomGraphTuple(ir_id: int) -> graph_tuple_database.GraphTuple:
   return graph_tuple_database.GraphTuple.CreateFromGraphTuple(gt, ir_id=ir_id)
 
 
-@test.Fixture(
-  scope="session",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("graph_db"),
-)
+@test.Fixture(scope="session", params=testing_databases.TEST_DB_URLS)
 def empty_graph_db(request) -> graph_tuple_database.Database:
   """A test fixture which yields an empty database."""
   yield from testing_databases.YieldDatabase(

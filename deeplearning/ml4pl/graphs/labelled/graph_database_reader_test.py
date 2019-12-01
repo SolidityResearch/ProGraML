@@ -24,11 +24,7 @@ def CreateRandomGraphTuple(ir_id: int) -> graph_tuple_database.GraphTuple:
   return graph_tuple_database.GraphTuple.CreateFromGraphTuple(gt, ir_id=ir_id)
 
 
-@test.Fixture(
-  scope="session",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("graph_db"),
-)
+@test.Fixture(scope="session", params=testing_databases.TEST_DB_URLS)
 def empty_graph_db(request) -> graph_tuple_database.Database:
   """A test fixture which yields an empty database."""
   yield from testing_databases.YieldDatabase(
@@ -157,6 +153,7 @@ def test_BufferedGraphReader_limit(
   assert len(graphs) == min(limit, 10000)
 
 
+@test.XFail(reason="Class-based reader implementation is not an iterator")
 @test.Parametrize("buffer_size_mb", READER_BUFFER_SIZES)
 @test.Parametrize("order", ALL_READER_ORDERS)
 def test_BufferedGraphReader_next(

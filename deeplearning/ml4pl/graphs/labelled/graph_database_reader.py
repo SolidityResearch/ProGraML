@@ -12,10 +12,17 @@ from deeplearning.ml4pl.graphs.labelled import graph_tuple_database
 from labm8.py import app
 from labm8.py import humanize
 from labm8.py import progress
-from labm8.py import sqlutil
 
 FLAGS = app.FLAGS
 
+
+app.DEFINE_database(
+  "graph_db",
+  graph_tuple_database.Database,
+  None,
+  "The database to read graph tuples from.",
+  must_exist=True,
+)
 app.DEFINE_string(
   "graph_reader_order",
   "batch_random",
@@ -73,7 +80,7 @@ class BufferedGraphReader(object):
   def __init__(
     self,
     db: graph_tuple_database.Database,
-    buffer_size_mb: int = 16,
+    buffer_size_mb: int,
     filters: Optional[List[Callable[[], bool]]] = None,
     order: BufferedGraphReaderOrder = BufferedGraphReaderOrder.IN_ORDER,
     eager_graph_loading: bool = True,
@@ -108,17 +115,18 @@ class BufferedGraphReader(object):
     # entries. Ignore those.
     self.filters.append(lambda: graph_tuple_database.GraphTuple.node_count > 1)
 
-    if not self.db.graph_count:
-      raise ValueError(f"Database contains no graphs: {self.db.url}")
-
     with ctx.Profile(
-      3,
+      2,
       lambda _: (
         f"Selected {humanize.Commas(self.n)} of "
-        f"{humanize.Commas(self.db.graph_count)} graphs from database"
+        f"{humanize.Commas(self.total_graph_count)} graphs in database"
       ),
     ):
       with db.Session() as session:
+        self.total_graph_count = session.query(
+          sql.func.count(graph_tuple_database.GraphTuple.id)
+        ).scalar()
+
         # Random ordering means that we can't use
         # labm8.py.sqlutil.OffsetLimitBatchedQuery() to read results as each
         # query will produce a different random order. Instead, first run a
@@ -154,8 +162,7 @@ class BufferedGraphReader(object):
 
       if not self.ids_and_sizes:
         raise ValueError(
-          f"Query on database `{db.url}` returned no results: "
-          f"`{sqlutil.QueryToString(query)}`"
+          f"Query on database `{db.url}` returned no results: `{query}`"
         )
 
       # When we are limiting the number of rows and not reading the table in
@@ -172,103 +179,80 @@ class BufferedGraphReader(object):
         # argument.
         self.ids_and_sizes = self.ids_and_sizes[:limit]
 
-      self.i = 0
       self.n = len(self.ids_and_sizes)
 
-      # The local buffer of graphs, and an index into that buffer.
-      self.buffer: List[graph_tuple_database.GraphTuple] = []
-      self.buffer_i = 0
-
   def __iter__(self):
-    return self
-
-  def __next__(self) -> graph_tuple_database.GraphTuple:
-    """Get the next graph."""
-    if self.buffer_i < len(self.buffer):
-      graph = self.buffer[self.buffer_i]
-      self.buffer_i += 1
-      return graph
-    else:
-      self.buffer = self.GetNextBuffer()
-      self.buffer_i = 1
-      return self.buffer[0]
-
-  def GetNextBuffer(self) -> List[graph_tuple_database.GraphTuple]:
-    """Fetch the next buffer of graphs from the database."""
-    if self.i >= self.n:
-      # We have run out of graphs to read.
-      raise StopIteration
-
-    # Select a batch of IDs to fetch from the database.
-    end_i = self.i
-    current_buffer_size = 0
-    # Build up our ID list until we have the requested buffer size.
-    while current_buffer_size < self.max_buffer_size:
-      current_buffer_size += self.ids_and_sizes[end_i][1]
-      end_i += 1
-      if end_i >= len(self.ids_and_sizes):
-        # We have reached the end of the graph list, fetch whatever remains
-        # into the local buffer.
-        break
-
     with self.db.Session() as session:
-      # Build the query to fetch the graph data from the database.
-      query = session.query(graph_tuple_database.GraphTuple)
+      i = 0
+      while i < len(self.ids_and_sizes):
+        # Peel off a batch of IDs to query.
+        end_i = i
+        current_buffer_size = 0
 
-      # Perform the joined eager load.
-      if self.eager_graph_loading:
-        query = query.options(
-          sql.orm.joinedload(graph_tuple_database.GraphTuple.data)
-        )
+        while current_buffer_size < self.max_buffer_size:
+          current_buffer_size += self.ids_and_sizes[end_i][1]
+          end_i += 1
+          if end_i >= len(self.ids_and_sizes):
+            # We have run out of graphs to read.
+            break
 
-      # If we are reading the IDs in-order then we can use ID range checks to
-      # return graphs. Else, we must perform ID value lookups.
-      if self.ordered_ids:
-        start_id = self.ids_and_sizes[self.i][0]
-        end_id = self.ids_and_sizes[end_i - 1][0]
-        query = query.filter(
-          graph_tuple_database.GraphTuple.id >= start_id,
-          graph_tuple_database.GraphTuple.id <= end_id,
-        )
-        # For index range comparisons we must repeat the same filters as when
-        # initially reading the graph IDs.
-        for filter in self.filters:
-          query = query.filter(filter())
-      else:
-        batch_ids = [
-          id_and_size[0] for id_and_size in self.ids_and_sizes[self.i : end_i]
-        ]
-        query = query.filter(graph_tuple_database.GraphTuple.id.in_(batch_ids))
+        query = session.query(graph_tuple_database.GraphTuple)
 
-      # Randomize the order of results for random orders.
-      if (
-        self.order == BufferedGraphReaderOrder.BATCH_RANDOM
-        or self.order == BufferedGraphReaderOrder.GLOBAL_RANDOM
-      ):
-        query = query.order_by(self.db.Random())
+        # Perform the joined eager load.
+        if self.eager_graph_loading:
+          query = query.options(
+            sql.orm.joinedload(graph_tuple_database.GraphTuple.data)
+          )
 
-      # Fetch the buffer data.
-      with self.ctx.Profile(
-        2,
-        f"Read {humanize.BinaryPrefix(current_buffer_size, 'B')} "
-        f"buffer of {end_i - self.i} graphs from {self.db.url}",
-      ):
-        buffer = query.all()
-      if len(buffer) != end_i - self.i:
-        raise OSError(
-          f"Requested buffer of {end_i - self.i} graphs but received "
-          f"{len(buffer)} graphs"
-        )
+        # If we are reading in ID order then we can use ID range checks to
+        # return graphs. Else, we must perform ID set lookups.
+        if self.ordered_ids:
+          start_id = self.ids_and_sizes[i][0]
+          end_id = self.ids_and_sizes[end_i - 1][0]
+          query = query.filter(
+            graph_tuple_database.GraphTuple.id >= start_id,
+            graph_tuple_database.GraphTuple.id <= end_id,
+          )
+          # For index range comparisons we must repeat the same filters as when
+          # initially reading the graph IDs.
+          for filter in self.filters:
+            query = query.filter(filter())
+        else:
+          batch_ids = [
+            id_and_size[0] for id_and_size in self.ids_and_sizes[i:end_i]
+          ]
+          query = query.filter(
+            graph_tuple_database.GraphTuple.id.in_(batch_ids)
+          )
 
-      # Update the index into the list of graph IDs.
-      self.i = end_i
+        # Randomize the order of results for random orders.
+        if (
+          self.order == BufferedGraphReaderOrder.BATCH_RANDOM
+          or self.order == BufferedGraphReaderOrder.GLOBAL_RANDOM
+        ):
+          query = query.order_by(self.db.Random())
 
-      return buffer
+        # Read the buffer.
+        with self.ctx.Profile(
+          3,
+          f"Read {humanize.BinaryPrefix(current_buffer_size, 'B')} "
+          f"buffer of {end_i - i} graph tuples",
+        ):
+          buffer = query.all()
+        if len(buffer) != end_i - i:
+          raise OSError(
+            f"Requested buffer of {end_i - i} graphs but received {len(buffer)}"
+          )
+        yield from buffer
+
+        i = end_i
+
+  # def __next__(self):
+  #   pass
 
   @classmethod
   def CreateFromFlags(
     cls,
-    graph_db: Optional[graph_tuple_database.Database] = None,
     filters: Optional[List[Callable[[], bool]]] = None,
     eager_graph_loading: bool = True,
     limit: int = None,
@@ -282,8 +266,6 @@ class BufferedGraphReader(object):
         --graph_reader_buffer_size_mb: The size of the buffer.
 
     Ars:
-      graph_db: A graph database instance. If not given, one is created from
-        --graph_db.
       filters: A list of filter callbacks.
       eager_graph_loading: Whether to load eagerly load the graph data.
       limit: The maximum number of graphs read.
@@ -291,7 +273,7 @@ class BufferedGraphReader(object):
     Returns:
       A BufferedGraphReader instance.
     """
-    graph_db = graph_db or FLAGS.graph_db()
+    graph_db = FLAGS.graph_db()
 
     if FLAGS.graph_reader_order == "in_order":
       order = BufferedGraphReaderOrder.IN_ORDER
@@ -320,7 +302,7 @@ class BufferedGraphReader(object):
 class WriteGraphsToFile(progress.Progress):
   """Write graphs in a graph database to pickled files.
 
-  This is for debugging.
+  This is to aid in debugging.
   """
 
   def __init__(self, outdir: pathlib.Path):
@@ -333,7 +315,7 @@ class WriteGraphsToFile(progress.Progress):
   def Run(self):
     """Read and write the graphs."""
     for self.ctx.i, graph_tuple in enumerate(self.reader):
-      path = self.outdir / f"graph_tuple_{graph_tuple.id:08}.pickle"
+      path = self.outdir / f"graph_tuple_{graph_tuple.id}.pickle"
       graph_tuple.ToFile(path)
 
 
