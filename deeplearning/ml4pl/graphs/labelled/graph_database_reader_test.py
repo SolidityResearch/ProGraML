@@ -1,38 +1,30 @@
-# Copyright 2019 the ProGraML authors.
-#
-# Contact Chris Cummins <chrisc.101@gmail.com>.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """Unit tests //deeplearning/ml4pl/graphs/labelled:graph_tuple_database_reader"""
 import copy
 import random
 from typing import List
 
+from deeplearning.ml4pl.graphs import programl
 from deeplearning.ml4pl.graphs.labelled import graph_database_reader as reader
+from deeplearning.ml4pl.graphs.labelled import graph_tuple
 from deeplearning.ml4pl.graphs.labelled import graph_tuple_database
-from deeplearning.ml4pl.testing import random_graph_tuple_database_generator
+from deeplearning.ml4pl.graphs.migrate import networkx_to_protos
+from deeplearning.ml4pl.graphs.unlabelled.cdfg import random_cdfg_generator
 from deeplearning.ml4pl.testing import testing_databases
 from labm8.py import test
-
 
 FLAGS = test.FLAGS
 
 
-@test.Fixture(
-  scope="session",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("graph_db"),
-)
+def CreateRandomGraphTuple(ir_id: int) -> graph_tuple_database.GraphTuple:
+  """Generate a random graph tuple."""
+  g = random_cdfg_generator.FastCreateRandom()
+  proto = networkx_to_protos.NetworkXGraphToProgramGraphProto(g)
+  g = programl.ProgramGraphToNetworkX(proto)
+  gt = graph_tuple.GraphTuple.CreateFromNetworkX(g)
+  return graph_tuple_database.GraphTuple.CreateFromGraphTuple(gt, ir_id=ir_id)
+
+
+@test.Fixture(scope="session", params=testing_databases.TEST_DB_URLS)
 def empty_graph_db(request) -> graph_tuple_database.Database:
   """A test fixture which yields an empty database."""
   yield from testing_databases.YieldDatabase(
@@ -44,17 +36,14 @@ def empty_graph_db(request) -> graph_tuple_database.Database:
 def db_10000(
   empty_graph_db: graph_tuple_database.Database,
 ) -> graph_tuple_database.Database:
-  """Fixture which returns a database with 10000 + 2 graph tuples, where 2 of
-  the graph tuples are empty.
+  """Fixture which returns a database with 5000 + 2 graph tuples, where 2 of the
+  graph tuples are empty.
 
   For the current implementation of CreateRandomGraphTuple(), a database of
-  10000 graphs is ~14MB of data.
+  5000 graphs is ~14MB of data.
   """
   # Generate some random graph tuples.
-  graph_pool = [
-    random_graph_tuple_database_generator.CreateRandomGraphTuple()
-    for _ in range(128)
-  ]
+  graph_pool = [CreateRandomGraphTuple(0) for _ in range(128)]
 
   # Generate a full list of graphs by randomly selecting from the graph pool.
   random_graph_tuples: List[graph_tuple_database.GraphTuple] = [
@@ -164,6 +153,7 @@ def test_BufferedGraphReader_limit(
   assert len(graphs) == min(limit, 10000)
 
 
+@test.XFail(reason="Class-based reader implementation is not an iterator")
 @test.Parametrize("buffer_size_mb", READER_BUFFER_SIZES)
 @test.Parametrize("order", ALL_READER_ORDERS)
 def test_BufferedGraphReader_next(
