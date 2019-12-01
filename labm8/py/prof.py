@@ -15,14 +15,12 @@
 """
 import contextlib
 import csv
-import datetime
 import inspect
 import os
 import pathlib
 import sys
 import time
 import typing
-from typing import Optional
 
 from labm8.py import app
 from labm8.py import humanize
@@ -145,50 +143,12 @@ def timers():
     yield name
 
 
-class ProfileTimer(object):
-  """A profiling timer."""
-
-  def __init__(self):
-    self.start: datetime.datetime = datetime.datetime.utcnow()
-    self.end: Optional[datetime.datetime] = None
-
-  def Stop(self):
-    if self.end:
-      return
-    self.end = datetime.datetime.utcnow()
-
-  @property
-  def elapsed(self) -> float:
-    if self.end:
-      return (self.end - self.start).total_seconds()
-    else:
-      return (datetime.datetime.utcnow() - self.start).total_seconds()
-
-  @property
-  def elapsed_ms(self) -> int:
-    return int(round(self.elapsed * 1000))
-
-  def __repr__(self):
-    return humanize.Duration(self.elapsed)
-
-
-@app.skip_log_prefix
+# @app.skip_log_prefix
 @contextlib.contextmanager
 def Profile(
-<<<<<<< HEAD
-<<<<<<< HEAD:labm8/py/prof.py
   name: typing.Union[str, typing.Callable[[int], str]] = "",
   print_to: typing.Callable[[str], None] = lambda msg: app.Log(1, msg),
-) -> ProfileTimer:
-=======
-    name: str = '',
-    print_to: typing.Callable[[str], None] = lambda msg: app.Log(1, msg),
-=======
-  name: typing.Union[str, typing.Callable[[int], str]] = "",
-  print_to: typing.Callable[[str], None] = lambda msg: app.Log(1, msg),
->>>>>>> 4242aed2a... Automated code format.
 ):
->>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/prof.py
   """A context manager which prints the elapsed time upon exit.
 
   Args:
@@ -197,23 +157,6 @@ def Profile(
       argument.
     print_to: The function to print the result to.
   """
-<<<<<<< HEAD
-<<<<<<< HEAD:labm8/py/prof.py
-  name = name or "completed"
-  timer = ProfileTimer()
-  yield timer
-  timer.Stop()
-  if callable(name):
-    name = name(timer.elapsed)
-  print_to(f"{name} in {timer}")
-=======
-  name = name or 'completed'
-  start_time = time.time()
-  yield
-  elapsed = time.time() - start_time
-  print_to(f'{name} in {humanize.Duration(elapsed)}')
->>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/prof.py
-=======
   name = name or "completed"
   start_time = time.time()
   yield
@@ -221,7 +164,6 @@ def Profile(
   if callable(name):
     name = name(elapsed)
   print_to(f"{name} in {humanize.Duration(elapsed)}")
->>>>>>> 4242aed2a... Automated code format.
 
 
 @contextlib.contextmanager
@@ -272,17 +214,8 @@ class AutoCsvProfiler(object):
 
     with self._writer() as writer:
       writer.writerow(
-<<<<<<< HEAD
-<<<<<<< HEAD:labm8/py/prof.py
         ("Start Time (ms since UNIX epoch)", "Elapsed Time (ms)", "Event"),
       )
-=======
-          ('Start Time (ms since UNIX epoch)', 'Elapsed Time (ms)', 'Event'),)
->>>>>>> 49340dc00... Auto-format labm8 python files.:labm8/prof.py
-=======
-        ("Start Time (ms since UNIX epoch)", "Elapsed Time (ms)", "Event"),
-      )
->>>>>>> 4242aed2a... Automated code format.
 
   @contextlib.contextmanager
   def Profile(self, event_name: str = ""):
