@@ -1,9 +1,9 @@
 """This module defines a generator for random graph tuples."""
+import functools
 from typing import Iterable
-from typing import Optional
 
+from deeplearning.ml4pl.graphs import programl
 from deeplearning.ml4pl.graphs.labelled import graph_tuple
-from deeplearning.ml4pl.testing import random_networkx_generator
 from deeplearning.ml4pl.testing import random_programl_generator
 from labm8.py import test
 
@@ -16,7 +16,6 @@ def CreateRandomGraphTuple(
   node_y_dimensionality: int = 0,
   graph_x_dimensionality: int = 0,
   graph_y_dimensionality: int = 0,
-  node_count: int = None,
 ) -> graph_tuple.GraphTuple:
   """Generate a random graph tuple.
 
@@ -31,17 +30,17 @@ def CreateRandomGraphTuple(
     5. Edges have positions.
     6. The graph is strongly connected.
   """
-  graphs = [
-    random_networkx_generator.CreateRandomGraph(
+  protos = [
+    random_programl_generator.CreateRandomProto(
       node_x_dimensionality=node_x_dimensionality,
       node_y_dimensionality=node_y_dimensionality,
       graph_x_dimensionality=graph_x_dimensionality,
       graph_y_dimensionality=graph_y_dimensionality,
-      node_count=node_count,
     )
     for _ in range(disjoint_graph_count)
   ]
 
+  graphs = [programl.ProgramGraphToNetworkX(proto) for proto in protos]
   graph_tuples = [
     graph_tuple.GraphTuple.CreateFromNetworkX(graph) for graph in graphs
   ]
@@ -51,9 +50,9 @@ def CreateRandomGraphTuple(
     return graph_tuples[0]
 
 
-def EnumerateTestSet(
-  n: Optional[int] = None,
-) -> Iterable[graph_tuple.GraphTuple]:
+@functools.lru_cache(maxsize=2)
+def EnumerateGraphTupleTestSet() -> Iterable[graph_tuple.GraphTuple]:
   """Enumerate a test set of "real" graph tuples."""
-  for graph in random_programl_generator.EnumerateTestSet(n=n):
-    yield graph_tuple.GraphTuple.CreateFromProgramGraph(graph)
+  for proto in random_programl_generator.EnumerateProtoTestSet():
+    g = programl.ProgramGraphToNetworkX(proto)
+    yield graph_tuple.GraphTuple.CreateFromNetworkX(g)
