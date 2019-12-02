@@ -7,59 +7,30 @@ When executed as a script, this generates and populates a database of graphs:
         --graph_db='sqlite:////tmp/graphs.db'
 """
 import copy
-import itertools
 import random
 from typing import List
 from typing import NamedTuple
 
-import numpy as np
-
+from deeplearning.ml4pl.graphs.labelled import graph_tuple
 from deeplearning.ml4pl.graphs.labelled import graph_tuple_database
-from deeplearning.ml4pl.testing import generator_flags
 from deeplearning.ml4pl.testing import random_graph_tuple_generator
 from labm8.py import app
-
-# This module is required to pull in FLAGS.
-_unused_imports_ = generator_flags
 
 FLAGS = app.FLAGS
 
 app.DEFINE_integer("graph_count", 1000, "The number of graphs to generate.")
 app.DEFINE_integer(
-  "random_graph_pool_size",
-  128,
-  "The maximum number of random graphs to generate.",
+  "node_x_dimensionality", 1, "The dimensionality of node x vectors."
 )
-
-
-def CreateRandomGraphTuple(
-  node_x_dimensionality: int = 1,
-  node_y_dimensionality: int = 0,
-  graph_x_dimensionality: int = 0,
-  graph_y_dimensionality: int = 0,
-  with_data_flow: bool = False,
-  split_count: int = 0,
-) -> graph_tuple_database.GraphTuple:
-  """Create a random graph tuple."""
-  mapped = graph_tuple_database.GraphTuple.CreateFromGraphTuple(
-    graph_tuple=random_graph_tuple_generator.CreateRandomGraphTuple(
-      node_x_dimensionality=node_x_dimensionality,
-      node_y_dimensionality=node_y_dimensionality,
-      graph_x_dimensionality=graph_x_dimensionality,
-      graph_y_dimensionality=graph_y_dimensionality,
-    ),
-    ir_id=random.randint(0, int(4e6)),
-    split=random.randint(0, split_count - 1) if split_count else None,
-  )
-
-  if with_data_flow:
-    mapped.data_flow_steps = random.randint(1, 50)
-    mapped.data_flow_root_node = random.randint(0, mapped.node_count - 1)
-    mapped.data_flow_positive_node_count = random.randint(
-      1, mapped.node_count - 1
-    )
-
-  return mapped
+app.DEFINE_integer(
+  "node_y_dimensionality", 1, "The dimensionality of node y vectors."
+)
+app.DEFINE_integer(
+  "graph_x_dimensionality", 1, "The dimensionality of graph x vectors."
+)
+app.DEFINE_integer(
+  "graph_y_dimensionality", 1, "The dimensionality of graph y vectors."
+)
 
 
 class DatabaseAndRows(NamedTuple):
@@ -76,25 +47,19 @@ def PopulateDatabaseWithRandomGraphTuples(
   node_y_dimensionality: int = 0,
   graph_x_dimensionality: int = 0,
   graph_y_dimensionality: int = 0,
-  with_data_flow: bool = False,
-  split_count: int = 0,
-  random_graph_pool_size: int = 0,
-) -> DatabaseAndRows:
+) -> graph_tuple.GraphTuple:
   """Populate a database of random graph tuples."""
-  random_graph_pool_size = random_graph_pool_size or min(
-    FLAGS.random_graph_pool_size, 128
-  )
-
   graph_pool = [
-    CreateRandomGraphTuple(
-      node_x_dimensionality=node_x_dimensionality,
-      node_y_dimensionality=node_y_dimensionality,
-      graph_x_dimensionality=graph_x_dimensionality,
-      graph_y_dimensionality=graph_y_dimensionality,
-      with_data_flow=with_data_flow,
-      split_count=split_count,
+    graph_tuple_database.GraphTuple.CreateFromGraphTuple(
+      graph_tuple=random_graph_tuple_generator.CreateRandomGraphTuple(
+        node_x_dimensionality=node_x_dimensionality,
+        node_y_dimensionality=node_y_dimensionality,
+        graph_x_dimensionality=graph_x_dimensionality,
+        graph_y_dimensionality=graph_y_dimensionality,
+      ),
+      ir_id=random.randint(0, int(4e6)),
     )
-    for _ in range(random_graph_pool_size)
+    for _ in range(min(graph_count, 128))
   ]
 
   # Generate a full list of graph rows by randomly selecting from the graph
@@ -103,73 +68,6 @@ def PopulateDatabaseWithRandomGraphTuples(
 
   with db.Session(commit=True) as session:
     session.add_all([copy.deepcopy(t) for t in rows])
-
-  db.RefreshStats()
-
-  return DatabaseAndRows(db, rows)
-
-
-def PopulateWithTestSet(
-  db: graph_tuple_database.Database,
-  graph_count: int,
-  node_x_dimensionality: int = 2,
-  node_y_dimensionality: int = 0,
-  graph_x_dimensionality: int = 0,
-  graph_y_dimensionality: int = 0,
-  with_data_flow: bool = False,
-  split_count: int = 0,
-):
-  """Populate a database with "real" programs."""
-  rows = []
-  graph_tuples = itertools.islice(
-    itertools.cycle(
-      random_graph_tuple_generator.EnumerateTestSet(n=graph_count)
-    ),
-    graph_count,
-  )
-  for i, graph_tuple in enumerate(graph_tuples):
-    # Set the graph labels.
-    node_x = (
-      np.random.randint(
-        low=0, high=2, size=(graph_tuple.node_count, node_x_dimensionality)
-      )
-      if node_x_dimensionality
-      else None
-    )
-    node_y = (
-      np.random.rand(graph_tuple.node_count, node_y_dimensionality)
-      if node_y_dimensionality
-      else None
-    )
-    graph_x = (
-      np.random.randint(low=0, high=51, size=graph_x_dimensionality)
-      if graph_x_dimensionality
-      else None
-    )
-    graph_y = (
-      np.random.rand(graph_y_dimensionality) if graph_y_dimensionality else None
-    )
-    graph_tuple = graph_tuple.SetFeaturesAndLabels(
-      node_x=node_x, node_y=node_y, graph_x=graph_x, graph_y=graph_y, copy=False
-    )
-
-    mapped = graph_tuple_database.GraphTuple.CreateFromGraphTuple(
-      graph_tuple,
-      ir_id=i + 1,
-      split=random.randint(0, split_count) if split_count else None,
-    )
-
-    if with_data_flow:
-      mapped.data_flow_steps = random.randint(1, 50)
-      mapped.data_flow_root_node = random.randint(0, mapped.node_count - 1)
-      mapped.data_flow_positive_node_count = random.randint(
-        1, mapped.node_count - 1
-      )
-
-    rows.append(mapped)
-
-  with db.Session(commit=True) as session:
-    session.add_all(rows)
 
   return DatabaseAndRows(db, rows)
 
@@ -184,8 +82,6 @@ def Main():
     node_y_dimensionality=FLAGS.node_y_dimensionality,
     graph_x_dimensionality=FLAGS.graph_x_dimensionality,
     graph_y_dimensionality=FLAGS.graph_y_dimensionality,
-    with_data_flow=FLAGS.with_data_flow,
-    split_count=FLAGS.split_count,
   )
 
 
