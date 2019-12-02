@@ -45,11 +45,7 @@ def test_CreateRandomGraphTuple(
     assert graph_tuple.data_flow_positive_node_count is None
 
 
-@test.Fixture(
-  scope="function",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("db"),
-)
+@test.Fixture(scope="function", params=testing_databases.TEST_DB_URLS)
 def db(request) -> graph_tuple_database.Database:
   """A test fixture which yields an empty graph proto database."""
   yield from testing_databases.YieldDatabase(
@@ -57,45 +53,33 @@ def db(request) -> graph_tuple_database.Database:
   )
 
 
-@test.Fixture(scope="function", params=(1, 100))
+@test.Fixture(scope="function", params=(1, 1000, 5000))
 def graph_count(request) -> int:
-  """Test fixture to enumerate graph counts."""
   return request.param
 
 
 @test.Fixture(scope="function", params=(1, 3))
 def node_x_dimensionality(request) -> int:
-  """Test fixture to enumerate node feature dimensionalities."""
   return request.param
 
 
 @test.Fixture(scope="function", params=(0, 3))
 def node_y_dimensionality(request) -> int:
-  """Test fixture to enumerate node label dimensionalities."""
   return request.param
 
 
 @test.Fixture(scope="function", params=(0, 3))
 def graph_x_dimensionality(request) -> int:
-  """Test fixture to enumerate graph feature dimensionalities."""
   return request.param
 
 
 @test.Fixture(scope="function", params=(0, 3))
 def graph_y_dimensionality(request) -> int:
-  """Test fixture to enumerate graph label dimensionalities."""
   return request.param
 
 
 @test.Fixture(scope="function", params=(False, True))
 def with_data_flow(request) -> int:
-  """Test fixture to enumerate data flows."""
-  return request.param
-
-
-@test.Fixture(scope="function", params=(0, 2))
-def split_count(request) -> int:
-  """Test fixture to enumerate split counts."""
   return request.param
 
 
@@ -107,18 +91,14 @@ def test_PopulateDatahaseithRandomGraphTuples(
   graph_x_dimensionality: int,
   graph_y_dimensionality: int,
   with_data_flow: bool,
-  split_count: int,
 ):
   """Test populating databases."""
   random_graph_tuple_database_generator.PopulateDatabaseWithRandomGraphTuples(
-    db=db,
-    graph_count=graph_count,
     node_x_dimensionality=node_x_dimensionality,
     node_y_dimensionality=node_y_dimensionality,
     graph_x_dimensionality=graph_x_dimensionality,
     graph_y_dimensionality=graph_y_dimensionality,
     with_data_flow=with_data_flow,
-    split_count=split_count,
   )
   with db.Session() as session:
     assert (
