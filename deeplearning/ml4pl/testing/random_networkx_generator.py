@@ -1,6 +1,6 @@
 """This module defines a generator for random graph tuples."""
+import functools
 from typing import Iterable
-from typing import Optional
 
 import networkx as nx
 
@@ -16,7 +16,6 @@ def CreateRandomGraph(
   node_y_dimensionality: int = 0,
   graph_x_dimensionality: int = 0,
   graph_y_dimensionality: int = 0,
-  node_count: int = None,
 ) -> nx.MultiDiGraph:
   """Generate a random graph.
 
@@ -36,12 +35,12 @@ def CreateRandomGraph(
     node_y_dimensionality=node_y_dimensionality,
     graph_x_dimensionality=graph_x_dimensionality,
     graph_y_dimensionality=graph_y_dimensionality,
-    node_count=node_count,
   )
   return programl.ProgramGraphToNetworkX(proto)
 
 
-def EnumerateTestSet(n: Optional[int] = None) -> Iterable[nx.MultiDiGraph]:
+@functools.lru_cache(maxsize=2)
+def EnumerateGraphTestSet() -> Iterable[nx.MultiDiGraph]:
   """Enumerate a test set of "real" graphs."""
-  for proto in random_programl_generator.EnumerateTestSet(n=n):
+  for proto in random_programl_generator.EnumerateProtoTestSet():
     yield programl.ProgramGraphToNetworkX(proto)
