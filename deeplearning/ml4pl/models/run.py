@@ -1,34 +1,20 @@
-"""Run script for machine learning models.
+"""This file contains TODO: one line summary.
 
-This defines the schedules for running training / validation / testing loops
-of a machine learning model.
+TODO: Detailed explanation of the file.
 """
-import copy
-import sys
-import warnings
-from typing import Dict
+from typing import Callable
 from typing import List
-from typing import Optional
-from typing import Tuple
-from typing import Union
 
-import pandas as pd
-import pyfiglet
-from sklearn.exceptions import UndefinedMetricWarning
-
+from deeplearning.ml4pl.graphs.labelled import graph_database_reader
 from deeplearning.ml4pl.graphs.labelled import graph_tuple_database
-from deeplearning.ml4pl.models import batch as batchs
-from deeplearning.ml4pl.models import batch_iterator as batch_iterator_lib
-from deeplearning.ml4pl.models import checkpoints
 from deeplearning.ml4pl.models import classifier_base
 from deeplearning.ml4pl.models import epoch
 from deeplearning.ml4pl.models import logger as logger_lib
-from deeplearning.ml4pl.models import schedules
 from labm8.py import app
-from labm8.py import pdutil
 from labm8.py import prof
 from labm8.py import progress
 from labm8.py import shell
+
 
 FLAGS = app.FLAGS
 
@@ -41,21 +27,8 @@ app.DEFINE_string(
   "the most recent epoch is used. Model checkpoints are loaded from "
   "the log database.",
 )
-app.DEFINE_enum(
-  "save_on",
-  schedules.SaveOn,
-  schedules.SaveOn.EVERY_EPOCH,
-  "The type of checkpoints to save.",
-)
 app.DEFINE_string(
-  "test_on",
-  "improvement_and_last",
-  "Determine when to run the test set. Possible values: none (never run the "
-  "test set), every (test at the end of every epoch), improvement (test only "
-  "when validation accuracy improves), or improvent_and_last (test when "
-  "validation accuracy improves, and on the last epoch).",
-  validator=lambda s: s
-  in {"none", "every", "improvement", "improvement_and_last",},
+  "test_on", "improvement", "Determine when to run the test set.",
 )
 app.DEFINE_boolean(
   "test_only",
@@ -69,6 +42,19 @@ app.DEFINE_integer(
   "The number of epochs to train for without any improvement in validation "
   "accuracy before stopping.",
 )
+app.DEFINE_integer(
+  "max_train_per_epoch",
+  None,
+  "Use this flag to limit the maximum number of instances used in a single "
+  "training epoch. For k-fold cross-validation, each of the k folds will "
+  "train on a maximum of this many graphs.",
+)
+app.DEFINE_integer(
+  "max_val_per_epoch",
+  None,
+  "Use this flag to limit the maximum number of instances used in a single "
+  "validation epoch.",
+)
 app.DEFINE_list(
   "val_split",
   ["1"],
@@ -81,105 +67,93 @@ app.DEFINE_list(
   "The name of the hold-out splits to be used for testing. All splits "
   "except --val_split and --test_split will be used for training.",
 )
-app.DEFINE_boolean(
-  "k_fold",
-  False,
-  "If set, iterate over all K splits in the database, training and evaluating "
-  "a model for each.",
-)
-app.DEFINE_boolean(
-  "run_with_memory_profiler",
-  False,
-  "If set, run the program with memory profiling enabled. See "
-  "https://pypi.org/project/memory-profiler/",
-)
-
-
-class RunError(OSError):
-  """An error that occurs during model execution."""
-
-  pass
 
 
 def SplitStringsToInts(split_strings: List[str]):
   """Convert string split names to integers."""
-
-  def MakeInt(split: str):
-    try:
-      return int(split)
-    except Exception:
-      raise app.UsageError(f"Invalid split number: {split}")
-
-  return [MakeInt(split) for split in split_strings]
+  try:
+    return [int(split) for split in split_strings]
+  except Exception:
+    raise app.UsageError(
+      f"Splits must be a list of integers, found {split_strings}"
+    )
 
 
-def SplitsFromFlags(
-  graph_db: graph_tuple_database.Database,
-) -> Dict[epoch.Type, List[int]]:
-  val_splits = SplitStringsToInts(FLAGS.val_split)
-  test_splits = SplitStringsToInts(FLAGS.test_split)
-  train_splits = list(set(graph_db.splits) - set(val_splits) - set(test_splits))
-  return {
-    epoch.Type.TRAIN: train_splits,
-    epoch.Type.VAL: val_splits,
-    epoch.Type.TEST: test_splits,
-  }
-
-
-def RunEpoch(
+def _RunEpoch(
   epoch_name: str,
   model: classifier_base.ClassifierBase,
-  batch_iterator: batchs.BatchIterator,
+  graph_db: graph_tuple_database.Database,
   epoch_type: epoch.Type,
   logger: logger_lib.Logger,
-) -> Tuple[epoch.Results, int]:
-  """Run a single epoch.
+  ctx: progress.Progress = progress.NullContext,
+) -> epoch.Results:
+  """
 
   Args:
-    epoch_name: The name of the epoch, used to generate the logging output.
-    epoch_type: The type of epoch to run.
-    model: The model to run an epoch on.
-    batch_iterator: An iterator over batches.
-    logger: A logger instance.
+    model: A model.
+    graph_db: A graph database.
+    epoch_type: The epoch type to run.
     ctx: A progress context.
 
   Returns:
-    The results of the epoch.
+    An epoch Results instance.
   """
 
-  def GetEpochLabel(results: epoch.Results) -> str:
-    """Generate the label for an epoch. This is printed to stdout."""
+  def _EpochLabel(results: epoch.Results):
+    if results >= model.best_val_results:
+      color = shell.ShellEscapeCodes.GREEN
+    else:
+      color = shell.ShellEscapeCodes.RED
+
     return (
-      f"{shell.ShellEscapeCodes.BLUE}{model.run_id}{shell.ShellEscapeCodes.END} "
-      f"{epoch_name} "
-      f"{results.ToFormattedString(model.best_results[epoch_type].results)}"
+      f"{model.run_id} {epoch_name} "
+      f"{shell.ShellEscapeCodes.BOLD}{color}{results}{shell.ShellEscapeCodes.END}"
     )
 
-  with prof.Profile(
-    lambda t: GetEpochLabel(results), print_to=logger.ctx.print
-  ):
-    results = model(epoch_type, batch_iterator, logger)
+  with prof.Profile(lambda t: _EpochLabel(results), print_to=ctx.print):
+    # Filter the graph database to load graphs from the requested splits.
+    val_splits = SplitStringsToInts(FLAGS.val_split)
+    test_splits = SplitStringsToInts(FLAGS.test_split)
 
-  # Check if the model has improved.
-  improved = model.best_results[epoch_type].epoch_num == model.epoch_num
+    if epoch_type == epoch.Type.TRAIN:
+      splits = list(set(graph_db.splits) - set(val_splits) - set(test_splits))
+    elif epoch_type == epoch.Type.VAL:
+      splits = val_splits
+    elif epoch_type == epoch.Type.TEST:
+      splits = test_splits
+    ctx.Log(
+      3, "Using %s graph splits %s", epoch_type.name.lower(), sorted(splits)
+    )
 
-  return results, improved
+    if len(splits) == 1:
+      split_filter = lambda: graph_tuple_database.GraphTuple.split == splits[0]
+    else:
+      split_filter = lambda: graph_tuple_database.GraphTuple.split.in_(splits)
+
+    graph_reader = graph_database_reader.BufferedGraphReader.CreateFromFlags(
+      filters=[split_filter], ctx=ctx
+    )
+
+    results = model(epoch_type, graph_reader, logger)
+
+  return results
 
 
 class Train(progress.Progress):
-  """A training job. This implements train/val/test schedule."""
+  """The training job."""
 
   def __init__(
     self,
     model: classifier_base.ClassifierBase,
     graph_db: graph_tuple_database.Database,
     logger: logger_lib.Logger,
-    splits: Dict[epoch.Type, List[int]],
   ):
+    if FLAGS.test_on not in {"none", "every", "improvement", "end"}:
+      raise app.UsageError("Unknown --test_on option")
+
     self.model = model
     self.graph_db = graph_db
     self.logger = logger
-    self.splits = splits
     super(Train, self).__init__(
       str(self.model.run_id),
       i=self.model.epoch_num,
@@ -188,351 +162,84 @@ class Train(progress.Progress):
       vertical_position=1,
       leave=False,
     )
-    self.logger.ctx = self.ctx
 
-  def MakeBatchIterator(self, epoch_type: epoch.Type) -> batchs.BatchIterator:
-    """Construct a batch iterator."""
-    return batch_iterator_lib.MakeBatchIterator(
-      model=self.model,
-      graph_db=self.graph_db,
-      splits=self.splits,
-      epoch_type=epoch_type,
-      ctx=self.ctx,
-    )
-
-  def RunOneEpoch(self, test_on: str, save_on) -> None:
-    """Inner loop to run a single train/val/test epoch.
-    """
-    # Create both training and validation batch iterators ahead of time to start
-    # asynchronously constructing batches. The testing iterator must be produced
-    # on demand as it isn't always needed.
-    train_batches = self.MakeBatchIterator(epoch.Type.TRAIN)
-    val_batches = self.MakeBatchIterator(epoch.Type.VAL)
-    if test_on == "every":
-      # If we know that we're going to use them, produce the test batches.
-      test_batches = self.MakeBatchIterator(epoch.Type.TEST)
-
-    # Run the training and validation epochs.
-    train_results, _ = self.RunEpoch(epoch.Type.TRAIN, train_batches)
-    val_results, val_improved = self.RunEpoch(epoch.Type.VAL, val_batches)
-
-    if val_improved and (
-      test_on == "improvement" or test_on == "improvement_and_last"
-    ):
-      self.RunEpoch(epoch.Type.TEST, self.MakeBatchIterator(epoch.Type.TEST))
-    elif test_on == "improvement_and_last" and self.ctx.i == self.ctx.n - 1:
-      self.RunEpoch(epoch.Type.TEST, self.MakeBatchIterator(epoch.Type.TEST))
-
-    # Determine whether to make a checkpoint.
-    if save_on == schedules.SaveOn.EVERY_EPOCH or (
-      save_on == schedules.SaveOn.VAL_IMPROVED and val_improved
-    ):
-      self.model.SaveCheckpoint()
-
-    if test_on == "every":
-      self.RunEpoch(epoch.Type.TEST, test_batches)
-
-  def Run(self):
+  def Run(self) -> epoch.Results:
     """Run the train/val/test loop."""
-    test_on = FLAGS.test_on
-    if test_on not in {"none", "every", "improvement", "improvement_and_last"}:
-      raise app.UsageError("Unknown --test_on value")
+    # Set later.
+    test_results = epoch.Results.NullResults()
 
-    save_on = FLAGS.save_on()
+    for self.ctx.i in range(self.ctx.i + 1, self.ctx.n + 1):
+      self.model.epoch_num = self.ctx.i
+      self._RunEpoch(epoch.Type.TRAIN)
+      val_results = self._RunEpoch(epoch.Type.VAL)
 
-    for self.ctx.i in range(self.ctx.i, self.ctx.n):
-      self.RunOneEpoch(test_on, save_on)
+      if val_results > self.model.best_val_results:
+        self.ctx.Log(
+          2,
+          "Validation results improved:\n  from: %s\n    to: %s",
+          self.model.best_val_results,
+          val_results,
+        )
+        self.model.best_val_results = val_results
+        self.logger.Save(self.model.run_id, self.model.ModelDataToSave())
 
-    # Record the final epoch.
-    self.ctx.i += 1
+        if FLAGS.test_on == "improvement":
+          test_results = self._RunEpoch(epoch.Type.TEST)
 
-  def RunEpoch(
-    self, epoch_type: epoch.Type, batch_iterator: batchs.BatchIterator,
-  ) -> Tuple[epoch.Results, int]:
+      if FLAGS.test_on == "every":
+        test_results = self._RunEpoch(epoch.Type.TEST)
+
+    # We have reached the end of training. If we haven't been doing incremental
+    # testing, then run the test set.
+    if FLAGS.test_on == "end":
+      self.model.LoadModelData(self.logger.Load(FLAGS.restore_model))
+      test_results = self._RunEpoch(epoch.Type.TEST)
+
+    return test_results
+
+  def _RunEpoch(self, epoch_type: epoch.Type):
     """Run an epoch of the given type."""
     epoch_name = (
-      f"{epoch_type.name.lower():>5} "
-      f"[{self.model.epoch_num:3d} / {self.ctx.n:3d}]"
+      f"{epoch_type.name.lower():>5} " f"[{self.ctx.i:3d} / {self.ctx.n:3d}]"
     )
-    return RunEpoch(
-      epoch_name=epoch_name,
-      model=self.model,
-      batch_iterator=batch_iterator,
-      epoch_type=epoch_type,
-      logger=self.logger,
+    return _RunEpoch(
+      epoch_name, self.model, self.graph_db, epoch_type, self.logger, self.ctx
     )
 
 
-def PrintExperimentHeader(model: classifier_base.ClassifierBase) -> None:
-  print("==================================================================")
-  print(pyfiglet.figlet_format(model.run_id.script_name))
-  print("Run ID:", model.run_id)
-  params = model.parameters[["type", "name", "value"]]
-  params = params.rename(columns=({"type": "parameter"}))
-  print(pdutil.FormatDataFrameAsAsciiTable(params))
-  print()
-  print(model.Summary())
-  print("==================================================================")
+ModelClass = Callable[
+  [graph_tuple_database.Database], classifier_base.ClassifierBase
+]
 
 
-def PrintExperimentFooter(
-  model: classifier_base.ClassifierBase, best_epoch: pd.Series
-) -> None:
-  print(
-    f"\rResults at best val epoch {best_epoch['epoch_num']} / {model.epoch_num}:"
-  )
-  print("==================================================================")
-  print(best_epoch.to_string())
-  print("==================================================================")
+def Run(model_class: ModelClass):
+  graph_db: graph_tuple_database.Database = FLAGS.graph_db()
+  logger = logger_lib.Logger.FromFlags()
 
+  # TODO(github.com/ChrisCummins/ProGraML/issues/24): Add split db.
+  # split_db = FLAGS.split_db()
 
-def GetModelEpochsTable(
-  model: classifier_base.ClassifierBase, logger: logger_lib.Logger
-) -> pd.DataFrame:
-  """Compute a table of per-epoch stats for the model."""
-  with logger.Session() as session:
-    for name, df in logger.db.GetTables(
-      run_ids=[model.run_id], session=session
-    ):
-      if name == "epochs":
-        return df.set_index("epoch_num")
-
-
-def CreateModel(
-  model_class, graph_db, logger
-) -> classifier_base.ClassifierBase:
-  model: classifier_base.ClassifierBase = model_class(
-    logger=logger, graph_db=graph_db
-  )
-
-  if FLAGS.restore_model:
-    with prof.Profile(
-      lambda t: f"Restored {model.run_id} from {checkpoint_ref}",
-      print_to=lambda msg: app.Log(2, msg),
-    ):
-      checkpoint_ref = checkpoints.CheckpointReference.FromString(
-        FLAGS.restore_model
-      )
-      model.RestoreFrom(checkpoint_ref)
-  else:
-    with prof.Profile(
-      lambda t: f"Initialized {model.run_id}",
-      print_to=lambda msg: app.Log(2, msg),
-    ):
+  # Instantiate a model.
+  with prof.Profile(lambda t: f"Initialized {model.run_id}"):
+    model = model_class(graph_db)
+    if FLAGS.restore_model:
+      # TODO(github.com/ChrisCummins/ProGraML/issues/24): Implement model
+      # restoring.
+      model.LoadModelData(logger.GetModelData(FLAGS.restore_model))
+    else:
       model.Initialize()
 
-  return model
+  if FLAGS.test_only:
+    _RunEpoch("test", model, graph_db, logger, epoch.Type.TEST)
+  else:
+    progress.Run(Train(model, graph_db, logger))
+
+  print("\rdone")
 
 
-def RunOne(
-  model_class,
-  graph_db: graph_tuple_database.Database,
-  print_header: bool = True,
-  print_footer: bool = True,
-  ctx: progress.ProgressContext = progress.NullContext,
-) -> pd.Series:
-  with logger_lib.Logger.FromFlags() as logger:
-    logger.ctx = ctx
-    model = CreateModel(model_class, graph_db, logger)
-
-    if print_header:
-      PrintExperimentHeader(model)
-
-    splits = SplitsFromFlags(graph_db)
-
-    if FLAGS.test_only:
-      batch_iterator = batch_iterator_lib.MakeBatchIterator(
-        model=model,
-        graph_db=graph_db,
-        splits=splits,
-        epoch_type=epoch.Type.TEST,
-      )
-      RunEpoch(
-        epoch_name="test",
-        model=model,
-        batch_iterator=batch_iterator,
-        epoch_type=epoch.Type.TEST,
-        logger=logger,
-      )
-    else:
-      train = Train(
-        model=model, graph_db=graph_db, logger=logger, splits=splits
-      )
-      progress.Run(train)
-      if train.ctx.i != train.ctx.n:
-        raise RunError("Model failed")
-
-    # Get the results for the best epoch.
-    epochs = GetModelEpochsTable(model, logger)
-
-    # Select only from the epochs with test accuracy, if available.
-    only_with_test_epochs = epochs[
-      (epochs["test_accuracy"].astype(str) != "-")
-      & (epochs["test_accuracy"].notnull())
-    ]
-    if len(only_with_test_epochs):
-      epochs = only_with_test_epochs
-
-    epochs.reset_index(inplace=True)
-
-    # Select the row with the greatest validation accuracy.
-    # TODO(github.com/ChrisCummins/ProGraML/issues/38): Find the memory leak.
-    best_epoch = copy.deepcopy(epochs.loc[epochs["val_accuracy"].idxmax()])
-    del epochs
-
-    if print_footer:
-      PrintExperimentFooter(model, best_epoch)
-
-    return best_epoch
+def Main():
+  Run(classifier_base.ClassifierBase)
 
 
-class KFoldCrossValidation(progress.Progress):
-  """A k cross-validation jobs.
-
-  This runs the requested train/val/test schedule using every split in the
-  graph database.
-  """
-
-  def __init__(self, model_class, graph_db: graph_tuple_database.Database):
-    """Constructor.
-
-    Args:
-      model_class: A model constructor.
-
-    Raises:
-      ValueError: If the database contains invalid splits.
-    """
-    self.model_class = model_class
-    self.graph_db = graph_db
-    self.results: Optional[pd.DataFrame] = []
-    if not self.graph_db.splits:
-      raise ValueError("Database contains no splits")
-    if self.graph_db.splits != list(range(len(self.graph_db.splits))):
-      raise ValueError(
-        "Graph database splits are not a contiguous sequence: "
-        f"{self.graph_db.splits}"
-      )
-    super(KFoldCrossValidation, self).__init__(
-      f"{self.graph_db.split_count}-fold xval",
-      i=0,
-      n=self.graph_db.split_count,
-      unit="split",
-      # Stack below the per-epoch and per-model progress bars.
-      vertical_position=2,
-      leave=False,
-    )
-
-  def Run(self):
-    """Run the train/val/test loop."""
-    results: List[pd.Series] = []
-    splits = self.graph_db.splits
-
-    # This assumes splits have values [0, ..., n-1].
-    for i in range(len(splits)):
-      self.ctx.i = i
-
-      # Set the splits flags so that the logger captures the correct
-      # parameters.
-      FLAGS.test_split = [str(splits[i])]
-      FLAGS.val_split = [str(splits[(i + 1) % len(splits)])]
-
-      # Print the header only on the first split.
-      print_header = False if i else True
-
-      results.append(
-        RunOne(
-          self.model_class,
-          self.graph_db,
-          print_header=print_header,
-          ctx=self.ctx,
-        )
-      )
-    self.ctx.i += 1
-
-    # If we got no results then there was an error during model runs.
-    if not results:
-      return
-
-    # Concatenate each of the run results into a dataframe.
-    df = pd.concat(results, axis=1).transpose()
-    # Get the list of run names and remove them from the columns. We'll set them
-    # again later.
-    df.set_index("run_id", inplace=True)
-    run_ids = list(df.index.values)
-    # Select only the subset of columns that we're interested in: test metrics.
-    df = df[
-      [
-        "epoch_num",
-        "test_loss",
-        "test_accuracy",
-        "test_precision",
-        "test_recall",
-        "test_f1",
-      ]
-    ]
-    # Add an averages row.
-    df = df.append(df.mean(axis=0), ignore_index=True)
-    # Strip the "test_" prefix from column names.
-    df.rename(
-      columns={
-        c: c[len("test_") :] for c in df.columns.values if c.startswith("test_")
-      },
-      inplace=True,
-    )
-    # Set the run IDs again.
-    df["run_id"] = run_ids + ["Average"]
-    df.set_index("run_id", inplace=True)
-    print()
-    print(f"Tests results of {len(results)}-fold cross-validation:")
-    print(pdutil.FormatDataFrameAsAsciiTable(df))
-
-    self.results = df
-
-
-def RunKFold(
-  model_class, graph_db: graph_tuple_database.Database
-) -> pd.DataFrame:
-  """Run k-fold cross-validation of the given model."""
-  kfold = KFoldCrossValidation(model_class, graph_db)
-  progress.Run(kfold)
-  if kfold.ctx.i != kfold.ctx.n:
-    raise RunError(
-      f"Expected to run {kfold.ctx.n} folds but only ran {kfold.ctx.i}"
-    )
-  if not isinstance(kfold.results, pd.DataFrame):
-    raise RunError("K-fold returned no results")
-  if len(kfold.results) < kfold.ctx.n:
-    raise RunError(
-      f"Ran {kfold.ctx.n} folds buts only have {kfold.results} results"
-    )
-  return kfold.results
-
-
-def Run(
-  model_class, graph_db: Optional[graph_tuple_database.Database] = None
-) -> Optional[Union[pd.Series, pd.DataFrame]]:
-  """Run the model with the requested flags actions.
-
-  Args:
-    model_class: The model to run.
-
-  Returns:
-    A DataFrame of k-fold results, or a single series of results.
-  """
-  if not graph_db and not FLAGS.graph_db:
-    raise app.UsageError("--graph_db is required")
-  graph_db: graph_tuple_database.Database = graph_db or FLAGS.graph_db()
-
-  # NOTE(github.com/ChrisCummins/ProGraML/issues/13): F1 score computation
-  # warns that it iss undefined when there are missing instances from a class,
-  # which is fine for our usage.
-  warnings.filterwarnings("ignore", category=UndefinedMetricWarning)
-
-  try:
-    if FLAGS.k_fold:
-      return RunKFold(model_class, graph_db)
-    else:
-      return RunOne(model_class, graph_db)
-  except RunError as e:
-    app.FatalWithoutStackTrace("%s", e)
-    sys.exit(1)
+if __name__ == "__main__":
+  app.Run(Main)
