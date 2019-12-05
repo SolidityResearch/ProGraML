@@ -2,9 +2,7 @@
 import sqlalchemy as sql
 
 from deeplearning.ml4pl import run_id as run_id_lib
-from deeplearning.ml4pl.graphs.labelled import graph_tuple_database
 from deeplearning.ml4pl.models import log_database
-from deeplearning.ml4pl.testing import random_graph_tuple_database_generator
 from deeplearning.ml4pl.testing import random_log_database_generator
 from deeplearning.ml4pl.testing import testing_databases
 from labm8.py import test
@@ -12,29 +10,10 @@ from labm8.py import test
 FLAGS = test.FLAGS
 
 
-@test.Fixture(scope="session", params=((0, 2), (2, 0)))
-def graph_db(request) -> graph_tuple_database.Database:
-  """A test fixture which returns a graph database with random graphs."""
-  graph_y_dimensionality, node_y_dimensionality = request.param
-  db = graph_tuple_database.Database(testing_databases.GetDatabaseUrls()[0])
-  random_graph_tuple_database_generator.PopulateDatabaseWithRandomGraphTuples(
-    db,
-    graph_count=100,
-    graph_y_dimensionality=graph_y_dimensionality,
-    node_y_dimensionality=node_y_dimensionality,
-  )
-  return db
-
-
-@test.Fixture(scope="session", params=(False, True))
-def generator(
-  request, graph_db: graph_tuple_database.Database
-) -> random_log_database_generator.RandomLogDatabaseGenerator:
+@test.Fixture(scope="session")
+def generator() -> random_log_database_generator.RandomLogDatabaseGenerator:
   """A test fixture which returns a log generator."""
-  graph_db = graph_db if request.param else None
-  return random_log_database_generator.RandomLogDatabaseGenerator(
-    graph_db=graph_db
-  )
+  return random_log_database_generator.RandomLogDatabaseGenerator()
 
 
 @test.Fixture(scope="session")
@@ -42,11 +21,7 @@ def run_id() -> run_id_lib.RunId:
   return run_id_lib.RunId.GenerateUnique("test")
 
 
-@test.Fixture(
-  scope="function",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("db"),
-)
+@test.Fixture(scope="function", params=testing_databases.TEST_DB_URLS)
 def db(request) -> log_database.Database:
   """A test fixture which yields an empty graph proto database."""
   yield from testing_databases.YieldDatabase(
@@ -70,11 +45,9 @@ def test_parameters(
 ):
   """Black-box test of generator properties."""
   logs = generator.CreateRandomRunLogs(
-    run_id=run_id, max_param_count=max_param_count
+    run_id=run_id, max_param_count=max_param_count,
   )
-  # We can't test on max_param_count as an upper bound because the log generator
-  # can add additional graph_db parameters.
-  assert 1 <= len(logs.parameters)
+  assert 1 <= len(logs.parameters) <= max_param_count
   for param in logs.parameters:
     assert isinstance(param, log_database.Parameter)
     assert param.run_id == run_id
@@ -170,7 +143,6 @@ def test_benchmark_CreateRandomGraphTuple(benchmark):
   """Benchmark logs generation."""
 
   def Benchmark():
-    """A microbenchmark that instantiates a new generator."""
     generator = random_log_database_generator.RandomLogDatabaseGenerator()
     generator.CreateRandomRunLogs()
 
