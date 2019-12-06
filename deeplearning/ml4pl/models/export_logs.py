@@ -4,27 +4,20 @@ Example usage:
 
   Print all of the parameters for a specific run:
 
-    $ bazel run //deeplearning/ml4pl/models:export_logs -- \
-        --log_db='sqlite:////tmp/logs.db' \
-        --print=parameters \
-        --run_id='ZeroR:191206111012:example'
+    bazel run //deeplearning/ml4pl/models:export_logs -- \
+      --log_db='sqlite:////tmp/logs.db' \
+      --ascii_table=parameters \
+      --run_id='ZeroR:191206111012:example'
 
   Export tables for all runs to a google sheets spreadsheet, with extra
   columns for the --initial_learning_rate and --learning_rate_decay flags:
 
-    $ bazel run //deeplearning/ml4pl/models:export_logs -- \
-        --log_db='sqlite:////tmp/logs.db' \
-        --google_sheet='My Spreadsheet' \
-        --google_sheets_credentials=/tmp/credentials.json \
-        --google_sheets_default_share_with=joe@example.com \
-        --extra_flags=initial_learning_rate,learning_rate_decay
-
-  Copy logs for two runs to another database:
-
-    $ bazel run //deeplearning/ml4pl/models:export_logs -- \
-        --log_db='sqlite:////tmp/logs.db' \
-        --dst_db='sqlite:////tmp/new_logs_db.db' \
-        --run_id='ZeroR:191206111012:example','Ggnn:191206111012:example'
+    bazel run //deeplearning/ml4pl/models:export_logs -- \
+      --log_db='sqlite:////tmp/logs.db' \
+      --google_sheet='My Spreadsheet' \
+      --google_sheets_credentials=/tmp/credentials.json \
+      --google_sheets_default_share_with=joe@example.com \
+      --extra_flags=initial_learning_rate,learning_rate_decay
 """
 import pathlib
 from typing import List
@@ -32,20 +25,16 @@ from typing import List
 import pandas as pd
 
 from deeplearning.ml4pl.models import log_database
-from deeplearning.ml4pl.models import schedules
-from deeplearning.ml4pl.models.ggnn import ggnn_config
-from deeplearning.ml4pl.models.lstm.lstm import Ir2SeqType
+from deeplearning.ml4pl.models import logger
 from labm8.py import app
 from labm8.py import google_sheets
 from labm8.py import pdutil
 from labm8.py import prof
 
 # During table export, we be able to de-pickle any of the class objects from
-# this project. List those classes / modules here to make the dependency
-# explicit.
+# this project. Import the modules which define these classes here.
 
-_unused_imports_ = (log_database, schedules, Ir2SeqType, ggnn_config)
-del _unused_imports_
+_unused_modules_ = (logger, log_database)
 
 
 FLAGS = app.FLAGS
@@ -56,12 +45,6 @@ app.DEFINE_list(
   [],
   "A list of run IDs to export. If not set, all runs in the database are "
   "exported. Run IDs that do not exist are silently ignored.",
-)
-app.DEFINE_list(
-  "export_tag",
-  [],
-  "A list of tags to export. If not set, all runs in the database are "
-  "exported. Tags that do not exist are silently ignored.",
 )
 # Flags for augmenting the data that is exported:
 app.DEFINE_list(
@@ -77,7 +60,7 @@ app.DEFINE_output_path(
   "csv_dir", None, "A directory to write CSV table files to."
 )
 app.DEFINE_list(
-  "print",
+  "ascii_table",
   [],
   "A list of tables to print to stdout as ASCII-formatted tables. Valid table "
   "names: {parameters,epochs,runs}.",
@@ -89,12 +72,6 @@ app.DEFINE_string(
   "not exist, the spreadsheet is created and shared with "
   "--google_sheets_default_share_with. See --google_sheets_credentials for "
   "setting the credentials required to use the Google Sheets API.",
-)
-app.DEFINE_database(
-  "dst_db",
-  log_database.Database,
-  None,
-  "The name of a log database to copy the log data to.",
 )
 
 
@@ -154,28 +131,14 @@ def Main():
     exporters.append(CsvExport(FLAGS.csv_dir))
   if FLAGS.google_sheet:
     exporters.append(GoogleSheetsExport(FLAGS.google_sheet))
-  if FLAGS.print:
-    exporters.append(AsciiTableExport(FLAGS.print))
+  if FLAGS.ascii_table:
+    exporters.append(AsciiTableExport(FLAGS.ascii_table))
+  if not exporters:
+    raise app.UsageError("No exporters")
 
-  with log_db.Session() as session:
-    # Resolve the runs to export.
-    run_ids_to_export = log_db.SelectRunIds(
-      run_ids=FLAGS.run_id, tags=FLAGS.export_tag, session=session
-    )
-
-    # Create tables for the given runs.
-    tables = log_db.GetTables(
-      run_ids=run_ids_to_export, extra_flags=FLAGS.extra_flags, session=session
-    )
-    for name, df in tables:
-      for exporter in exporters:
-        exporter.OnTable(name, df)
-
-    # Export to another database.
-    if FLAGS.dst_db:
-      log_db.CopyRunLogs(
-        FLAGS.dst_db(), run_ids=run_ids_to_export, session=session
-      )
+  for name, df in log_db.GetTables(FLAGS.run_id, extra_flags=FLAGS.extra_flags):
+    for exporter in exporters:
+      exporter.OnTable(name, df)
 
 
 if __name__ == "__main__":
