@@ -1,22 +1,6 @@
 # Intermediate representations.
-#
-# Copyright 2019 the ProGraML authors.
-#
-# Contact Chris Cummins <chrisc.101@gmail.com>.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
-py_binary(
+py_library(
     name = "ir_database",
     srcs = ["ir_database.py"],
     visibility = ["//deeplearning/ml4pl:__subpackages__"],
@@ -25,51 +9,7 @@ py_binary(
         "//labm8/py:app",
         "//labm8/py:crypto",
         "//labm8/py:humanize",
-        "//labm8/py:jsonutil",
-        "//labm8/py:progress",
         "//labm8/py:sqlutil",
         "//third_party/py/sqlalchemy",
-    ],
-)
-
-py_test(
-    name = "ir_database_test",
-    srcs = ["ir_database_test.py"],
-    visibility = ["//deeplearning/ml4pl:__subpackages__"],
-    deps = [
-        ":ir_database",
-        "//deeplearning/ml4pl:run_id",
-        "//deeplearning/ml4pl/testing:testing_databases",
-        "//labm8/py:decorators",
-        "//labm8/py:test",
-    ],
-)
-
-py_binary(
-    name = "split",
-    srcs = ["split.py"],
-    visibility = [
-        "//deeplearning/ml4pl/graphs:__subpackages__",
-    ],
-    deps = [
-        ":ir_database",
-        "//labm8/py:app",
-        "//labm8/py:humanize",
-        "//third_party/py/numpy",
-        "//third_party/py/scikit_learn",
-        "//third_party/py/sqlalchemy",
-    ],
-)
-
-py_test(
-    name = "split_test",
-    srcs = ["split_test.py"],
-    deps = [
-        ":ir_database",
-        ":split",
-        "//datasets/opencl/device_mapping:opencl_device_mapping_dataset",
-        "//deeplearning/ml4pl/graphs/labelled/devmap:make_devmap_dataset",
-        "//deeplearning/ml4pl/testing:testing_databases",
-        "//labm8/py:test",
     ],
 )
