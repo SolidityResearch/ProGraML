@@ -64,16 +64,11 @@ def ModelToDataFrame(
   return df
 
 
-<<<<<<< HEAD
-<<<<<<< HEAD:labm8/py/pdutil.py
-=======
->>>>>>> 4242aed2a... Automated code format.
 def RewriteColumn(
   df: pd.DataFrame,
   column: str,
   rewrite: typing.Callable[[typing.Any], typing.Any],
 ):
-<<<<<<< HEAD
   """Rewrite the values in a column in-place."""
   rewrites = []
   for x in df[column]:
@@ -85,55 +80,10 @@ def RewriteColumn(
   df[column] = rewrites
 
 
-def FormatDataFrameAsAsciiTable(
-  df: pd.DataFrame, index: bool = True, **tabulate_args
-) -> str:
-  """Format a data frame as an ascii table.
-
-  Example usage:
-
-    >>> pdutil.FormatDataFrameAsAsciiTable(
-            pd.DataFrame(['1', '2'], columns=['foo'])
-        )
-    +----+-------+
-    |    |   foo |
-    |----+-------|
-    |  0 |     1 |
-    |  1 |     2 |
-    +----+-------+
-
-  Args:
-    df: The dataframe to format.
-    index: Whether to include a column for the index.
-    tabulate_args: Additional arguments passed to tabulate. See:
-      <https://pypi.org/project/tabulate/>.
-
-  Returns:
-    The data frame formatted as a string.
-  """
-  default_args = {
-    "headers": "keys",
-    "tablefmt": "psql",
-    "showindex": "always" if index else "never",
-=======
-def RewriteColumn(df: pd.DataFrame, column: str,
-                  rewrite: typing.Callable[[typing.Any], typing.Any]):
-=======
->>>>>>> 4242aed2a... Automated code format.
-  """Rewrite the values in a column in-place."""
-  df[column] = [rewrite(x) for x in df[column]]
-
-
 def FormatDataFrameAsAsciiTable(df: pd.DataFrame, **tabulate_args):
   default_args = {
-<<<<<<< HEAD
-      'headers': 'keys',
-      'tablefmt': 'psql',
->>>>>>> 45574a301... Add the tabulate package.:labm8/pdutil.py
-=======
     "headers": "keys",
     "tablefmt": "psql",
->>>>>>> 4242aed2a... Automated code format.
   }
   default_args.update(tabulate_args)
   return tabulate.tabulate(df, **default_args)
