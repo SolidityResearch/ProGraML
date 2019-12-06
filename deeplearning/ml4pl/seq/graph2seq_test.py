@@ -1,236 +1,107 @@
-"""Unit tests for //deeplearning/ml4pl/seq:lexer."""
-import random
-import string
-from typing import Set
+"""Unit tests for //deeplearning/ml4pl/models/lstm:graph2seq."""
+import pathlib
+import pickle
 
-from datasets.opencl.device_mapping import opencl_device_mapping_dataset
-from deeplearning.ml4pl.graphs.labelled import graph_tuple_database
-from deeplearning.ml4pl.graphs.labelled.devmap import make_devmap_dataset
-from deeplearning.ml4pl.graphs.unlabelled import unlabelled_graph_database
-from deeplearning.ml4pl.ir import ir_database
+import networkx as nx
+
+from deeplearning.ml4pl.bytecode import bytecode_database
+from deeplearning.ml4pl.graphs import graph_database
 from deeplearning.ml4pl.seq import graph2seq
 from deeplearning.ml4pl.seq import ir2seq
-from deeplearning.ml4pl.testing import random_graph_tuple_database_generator
-from deeplearning.ml4pl.testing import (
-  random_unlabelled_graph_database_generator,
-)
-from deeplearning.ml4pl.testing import testing_databases
-from labm8.py import decorators
+from labm8.py import app
 from labm8.py import test
 
-FLAGS = test.FLAGS
+FLAGS = app.FLAGS
 
 
-###############################################################################
-# Utility code.
-###############################################################################
-
-
-def CreateRandomString(min_length: int = 1, max_length: int = 1024) -> str:
-  """Generate a random string."""
-  return "".join(
-    random.choice(string.ascii_lowercase)
-    for _ in range(random.randint(min_length, max_length))
-  )
-
-
-def SelectRandomGraphs(graph_db: graph_tuple_database.Database):
-  """Return [1, graph_db.graph_count] graphs in a random order."""
-  with graph_db.Session() as session:
-    # Load a random collection of graphs.
-    graphs = (
-      session.query(graph_tuple_database.GraphTuple)
-      .order_by(graph_db.Random())
-      .limit(random.randint(1, graph_db.graph_count))
-      .all()
-    )
-    # Sanity check that graphs are returned.
-    assert graphs
-
-  return graphs
-
-
-###############################################################################
-# Fixtures.
-###############################################################################
-
-
-@test.Fixture(
-  scope="session",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("ir_db"),
-)
-def ir_db(request) -> ir_database.Database:
-  """A test fixture which yields an empty graph proto database."""
-  yield from testing_databases.YieldDatabase(
-    ir_database.Database, request.param
-  )
-
-
-@test.Fixture(
-  scope="session",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("graph_db"),
-)
-def proto_db(request) -> unlabelled_graph_database.Database:
-  yield from testing_databases.YieldDatabase(
-    unlabelled_graph_database.Database, request.param
-  )
-
-
-@test.Fixture(scope="session")
-def opencl_relpaths() -> Set[str]:
-  opencl_df = make_devmap_dataset.MakeGpuDataFrame(
-    opencl_device_mapping_dataset.OpenClDeviceMappingsDataset().df,
-    "amd_tahiti_7970",
-  )
-  return set(opencl_df.relpath.values)
-
-
-@test.Fixture(
-  scope="session",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("graph_db"),
-)
-def populated_graph_db(
-  request, opencl_relpaths: Set[str]
-) -> unlabelled_graph_database.Database:
-  """A test fixture which yields a graph database with 256 OpenCL IR entries."""
-  with testing_databases.DatabaseContext(
-    graph_tuple_database.Database, request.param
-  ) as db:
-    random_graph_tuple_database_generator.PopulateWithTestSet(
-      db, len(opencl_relpaths)
-    )
-
-    yield db
-
-
-@test.Fixture(
-  scope="session",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("proto_db"),
-)
-def populated_proto_db(
-  request, opencl_relpaths: Set[str]
-) -> unlabelled_graph_database.Database:
-  """A test fixture which yields a graph database with 256 real protos."""
-  with testing_databases.DatabaseContext(
-    unlabelled_graph_database.Database, request.param
-  ) as db:
-    random_unlabelled_graph_database_generator.PopulateDatabaseWithTestSet(
-      db, len(opencl_relpaths)
-    )
-
-    yield db
-
-
-@test.Fixture(
-  scope="session",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("ir_db"),
-)
-def populated_ir_db(request, opencl_relpaths: Set[str]) -> ir_database.Database:
-  """A test fixture which yields an IR database with 256 OpenCL entries."""
-  with testing_databases.DatabaseContext(
-    ir_database.Database, request.param
-  ) as db:
-    rows = []
-    # Create IRs using OpenCL relpaths.
-    for i, relpath in enumerate(opencl_relpaths):
-      ir = ir_database.IntermediateRepresentation.CreateFromText(
-        source="pact17_opencl_devmap",
-        relpath=relpath,
-        source_language=ir_database.SourceLanguage.OPENCL,
-        type=ir_database.IrType.LLVM_6_0,
+@test.Fixture(scope="function")
+def bytecode_db(tempdir: pathlib.Path) -> bytecode_database.Database:
+  db = bytecode_database.Database(f"sqlite:///{tempdir}/bytecodes.db")
+  with db.Session(commit=True) as session:
+    session.add(
+      bytecode_database.LlvmBytecode(
+        id=1,
+        source_name="",
+        relpath="",
+        language="",
         cflags="",
-        text=CreateRandomString(),
+        charcount=len("Hello, world!"),
+        linecount=1,
+        bytecode="Hello, world!",
+        clang_returncode=0,
+        error_message="",
+        bytecode_sha1="",
       )
-      ir.id = i + 1
-      rows.append(ir)
-
-    with db.Session(commit=True) as session:
-      session.add_all(rows)
-
-    yield db
-
-
-@test.Fixture(
-  scope="session",
-  params=(ir2seq.LlvmEncoder, ir2seq.OpenClEncoder, ir2seq.Inst2VecEncoder),
-)
-def ir2seq_encoder(
-  request, populated_ir_db: ir_database.Database
-) -> ir2seq.EncoderBase:
-  """Test fixture which enumerates ir2seq encoders."""
-  return request.param(populated_ir_db)
-
-
-@test.Fixture(
-  scope="session",
-  params=(None, 30),
-  names=("cache_size:default", "cache_size:30"),
-)
-def cache_size(request) -> int:
-  """A test fixture to enumerate cache sizes."""
-  return request.param
+    )
+  yield db
 
 
 @test.Fixture(scope="function")
-def graph_encoder(
-  populated_graph_db: graph_tuple_database.Database,
-  ir2seq_encoder: ir2seq.EncoderBase,
-  cache_size: int,
-):
-  """A test fixture which enumerates statement encoders."""
-  return graph2seq.GraphEncoder(populated_graph_db, ir2seq_encoder, cache_size)
+def graph_db(tempdir: pathlib.Path) -> graph_database.Database:
+  db = graph_database.Database(f"sqlite:///{tempdir}/graphs.db")
+  # Add a program graph, which is used by GraphToBytecodeGroupingsEncoder.
+  g = nx.MultiDiGraph()
+  g.add_node("root", type="magic")
+  g.add_node("a", type="statement", function="a", original_text="a")
+  g.add_node("%1", type="identifier", function="a", original_text="%1")
+  g.add_edge("root", "a", flow="call")
+  g.add_edge("%1", "a", flow="data")
+  with db.Session(commit=True) as session:
+    session.add(
+      graph_database.GraphMeta(
+        id=1,
+        bytecode_id=1,
+        group="",
+        source_name="",
+        relpath="",
+        language="",
+        node_count=0,
+        edge_count=0,
+        edge_position_max=0,
+        loop_connectedness=0,
+        undirected_diameter=0,
+        graph=graph_database.Graph(pickled_data=pickle.dumps(g)),
+      )
+    )
+  yield db
 
 
-@test.Fixture(scope="function")
-def statement_encoder(
-  populated_proto_db: unlabelled_graph_database.Database,
-  populated_graph_db: graph_tuple_database.Database,
-  cache_size: int,
+def test_GraphToBytecodeEncoder_Encode(
+  graph_db: graph_database.Database, bytecode_db: bytecode_database.Database
 ):
-  """A test fixture which enumerates statement encoders."""
-  return graph2seq.StatementEncoder(
-    populated_graph_db,
-    populated_proto_db,
-    max_encoded_length=100,
-    max_nodes=50,
-    cache_size=cache_size,
+  FLAGS.bytecode_db = lambda: bytecode_db
+  encoder = graph2seq.GraphToBytecodeEncoder(graph_db, ir2seq.BytecodeEncoder())
+  encoded = encoder.Encode([1])
+  assert len(encoded) == 1
+  assert len(encoded[0])
+
+
+@test.Parametrize("group_by", ("statement", "identifier"))
+def test_GraphToBytecodeGroupingsEncoder_Encode(
+  graph_db: graph_database.Database,
+  bytecode_db: bytecode_database.Database,
+  group_by: str,
+):
+  FLAGS.bytecode_db = lambda: bytecode_db
+  FLAGS.unlabelled_graph_db = lambda: graph_db
+
+  encoder = graph2seq.GraphToBytecodeGroupingsEncoder(
+    graph_db, ir2seq.BytecodeEncoder(), group_by
   )
 
+  encoded_sequences, segment_ids, node_masks = encoder.Encode([1])
 
-###############################################################################
-# Tests.
-###############################################################################
+  assert 1 in encoded_sequences
+  assert 1 in segment_ids
+  assert 1 in node_masks
 
+  assert len(encoded_sequences) == 1
+  assert len(segment_ids) == 1
+  assert len(node_masks) == 1
 
-@decorators.loop_for(seconds=2, min_iteration_count=10)
-def test_fuzz_GraphEncoder(
-  graph_encoder: graph2seq.GraphEncoder,
-  populated_graph_db: graph_tuple_database.Database,
-):
-  """Fuzz the graph-level encoder."""
-  graphs = SelectRandomGraphs(populated_graph_db)
-  encoded = graph_encoder.Encode(graphs)
-
-  assert len(encoded) == len(graphs)
-
-
-@decorators.loop_for(seconds=3, min_iteration_count=10)
-def test_fuzz_StatementEncoder(
-  statement_encoder: graph2seq.StatementEncoder,
-  populated_graph_db: graph_tuple_database.Database,
-):
-  """Fuzz the statement-level encoder."""
-  graphs = SelectRandomGraphs(populated_graph_db)
-  encoded = statement_encoder.Encode(graphs)
-
-  assert len(encoded) == len(graphs)
-  for seq, graph in zip(encoded, graphs):
-    assert max(seq.node) < graph.node_count
+  assert len(encoded_sequences[1])
+  assert len(segment_ids[1])
+  assert len(node_masks[1])
 
 
 if __name__ == "__main__":
