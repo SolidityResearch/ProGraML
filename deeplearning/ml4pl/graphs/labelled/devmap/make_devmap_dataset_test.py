@@ -18,11 +18,7 @@ from labm8.py import test
 FLAGS = test.FLAGS
 
 
-@test.Fixture(
-  scope="function",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("ir_db"),
-)
+@test.Fixture(scope="function", params=testing_databases.GetDatabaseUrls())
 def ir_db(request) -> ir_database.Database:
   """A test fixture which yields an empty graph proto database."""
   yield from testing_databases.YieldDatabase(
@@ -30,22 +26,14 @@ def ir_db(request) -> ir_database.Database:
   )
 
 
-@test.Fixture(
-  scope="function",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("proto_db"),
-)
+@test.Fixture(scope="function", params=testing_databases.GetDatabaseUrls())
 def proto_db(request) -> unlabelled_graph_database.Database:
   yield from testing_databases.YieldDatabase(
     unlabelled_graph_database.Database, request.param
   )
 
 
-@test.Fixture(
-  scope="function",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("graph_db"),
-)
+@test.Fixture(scope="function", params=testing_databases.GetDatabaseUrls())
 def graph_db(request) -> graph_tuple_database.Database:
   yield from testing_databases.YieldDatabase(
     graph_tuple_database.Database, request.param
@@ -133,13 +121,6 @@ def test_MakeOpenClDevmapDataset(
     assert (
       session.query(sql.func.count(graph_tuple_database.GraphTuple.id)).scalar()
       >= 256
-    )
-    # Check that there are 2-D node features.
-    assert (
-      session.query(graph_tuple_database.GraphTuple.node_x_dimensionality)
-      .first()
-      .node_x_dimensionality
-      == 2
     )
 
 
