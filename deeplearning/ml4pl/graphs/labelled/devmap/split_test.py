@@ -9,23 +9,15 @@ from labm8.py import test
 FLAGS = test.FLAGS
 
 
-@test.Fixture(
-  scope="function",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("graph_db"),
-)
+@test.Fixture(scope="function", params=testing_databases.GetDatabaseUrls())
 def empty_graph_db(request) -> graph_tuple_database.Database:
   """A test fixture which yields a graph database with random graph tuples."""
-  yield from testing_databases.YieldDatabase(
+  yield testing_databases.YieldDatabase(
     graph_tuple_database.Database, request.param
   )
 
 
-@test.Fixture(
-  scope="function",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("graph_db"),
-)
+@test.Fixture(scope="function", params=testing_databases.GetDatabaseUrls())
 def populated_graph_db(request) -> graph_tuple_database.Database:
   """A test fixture which yields a graph database with random graph tuples."""
   with testing_databases.DatabaseContext(
@@ -38,13 +30,12 @@ def populated_graph_db(request) -> graph_tuple_database.Database:
 
 
 @test.Parametrize("k", (3, 5))
-@decorators.loop_for(seconds=5, min_iteration_count=3)
-def test_fuzz(
+@decorators.loop_for(seconds=10, min_iteration_count=3)
+def test_fuzz_ApplySplit(
   populated_graph_db: graph_tuple_database.Database,
   k: int,
   empty_graph_db: graph_tuple_database.Database,
 ):
-  """Opaque fuzzing of the public methods."""
   splitter = split.StratifiedGraphLabelKFold(k)
   splitter.ApplySplit(populated_graph_db)
   split.CopySplits(populated_graph_db, empty_graph_db)
