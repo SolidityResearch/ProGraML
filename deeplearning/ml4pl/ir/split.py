@@ -62,7 +62,7 @@ class Poj104TrainValTestSplitter(Splitter):
 
     def GetBytecodeIds(session, filter_cb) -> np.array:
       """Return the IDs for the given filtered query."""
-      ids = np.array(
+      return np.array(
         [
           row.id
           for row in (
@@ -75,9 +75,6 @@ class Poj104TrainValTestSplitter(Splitter):
         ],
         dtype=np.int32,
       )
-      if not ids.size:
-        raise ValueError("No results")
-      return ids
 
     with db.Session() as session:
       return [
@@ -166,9 +163,6 @@ class TrainValTestSplitter(Poj104TrainValTestSplitter):
         .order_by(db.Random())
       ]
 
-    if not ir_ids:
-      raise ValueError("No results")
-
     return [
       np.concatenate((poj104[0], ir_ids[: train_val_test_counts[0]])),
       np.concatenate(
@@ -209,8 +203,6 @@ class Pact17KFoldSplitter(Splitter):
         dtype=np.int32,
       )
 
-    if not all_ids.size:
-      raise ValueError("No results")
     kfold = sklearn.model_selection.KFold(self.k).split(all_ids)
     return [all_ids[test] for (train, test) in kfold]
 
