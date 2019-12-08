@@ -1,20 +1,4 @@
-# Creating datasets of intermediate representations.
-#
-# Copyright 2019 the ProGraML authors.
-#
-# Contact Chris Cummins <chrisc.101@gmail.com>.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
+# Datasets for compiler CFG problems.
 
 py_binary(
     name = "import_from_directory",
@@ -51,8 +35,8 @@ py_library(
         "//compilers/llvm:opt",
         "//compilers/llvm:opt_util",
         "//datasets/linux",
-        "//deeplearning/ml4pl/graphs/unlabelled/llvm2graph/cfg:control_flow_graph",
-        "//deeplearning/ml4pl/graphs/unlabelled/llvm2graph/cfg:llvm_util",
+        "//deeplearning/ml4pl/graphs/unlabelled/cfg:control_flow_graph",
+        "//deeplearning/ml4pl/graphs/unlabelled/cfg:llvm_util",
         "//deeplearning/ml4pl/ir:ir_database",
         "//labm8/py:app",
         "//labm8/py:decorators",
@@ -96,8 +80,8 @@ py_library(
         "//compilers/llvm:opt_util",
         "//datasets/opencl/device_mapping:opencl_device_mapping_dataset",
         "//deeplearning/clgen/preprocessors:opencl",
-        "//deeplearning/ml4pl/graphs/unlabelled/llvm2graph/cfg:control_flow_graph",
-        "//deeplearning/ml4pl/graphs/unlabelled/llvm2graph/cfg:llvm_util",
+        "//deeplearning/ml4pl/graphs/unlabelled/cfg:control_flow_graph",
+        "//deeplearning/ml4pl/graphs/unlabelled/cfg:llvm_util",
         "//deeplearning/ml4pl/ir:ir_database",
         "//labm8/py:app",
         "//labm8/py:decorators",
