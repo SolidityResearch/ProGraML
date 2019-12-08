@@ -1,18 +1,3 @@
-# Copyright 2019 the ProGraML authors.
-#
-# Contact Chris Cummins <chrisc.101@gmail.com>.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """Split a labelled graph database for K-fold cross-validation."""
 from typing import List
 
@@ -26,18 +11,13 @@ from labm8.py import app
 from labm8.py import humanize
 from labm8.py import prof
 
-
 FLAGS = app.FLAGS
 
 app.DEFINE_integer("k", 10, "The number of splits for K-fold splitter.")
 app.DEFINE_database(
   "copy_splits_to",
-  graph_tuple_database.Database,
   None,
   "If set, this is a database to copy the split column to.",
-)
-app.DEFINE_integer(
-  "seed", 0xCEC, "The random seed to use for splitting the dataset."
 )
 
 
@@ -60,11 +40,10 @@ class StratifiedGraphLabelKFold(object):
       for graph in reader:
         graph_ids.append(graph.id)
         graph_y.append(np.argmax(graph.tuple.graph_y))
-      graph_ids = np.array(graph_ids, dtype=np.int32)
-      graph_y = np.array(graph_y, dtype=np.int64)
 
+    seed = 0xCEC
     splitter = model_selection.StratifiedKFold(
-      n_splits=self.k, shuffle=True, random_state=FLAGS.seed
+      n_splits=self.k, shuffle=True, random_state=seed
     )
     dataset_splits = splitter.split(graph_ids, graph_y)
 
@@ -75,7 +54,7 @@ class StratifiedGraphLabelKFold(object):
 
   def ApplySplit(self, db: graph_tuple_database.Database) -> None:
     """Set the split values on the given database."""
-    for split, ids in enumerate(self.Split(db)):
+    for split, ids in self.Split(db):
       with prof.Profile(
         f"Set {split} split on {humanize.Plural(len(ids), 'row')}"
       ):
@@ -99,7 +78,7 @@ def CopySplits(
 
   # Copy each split one at a time.
   for split in input_db.splits:
-    with prof.Profile(f"Copied split {split}"):
+    with prof.Profile(1, f"Copied split {split}"):
       with input_db.Session() as in_session:
         ids_to_set = [
           row.id
