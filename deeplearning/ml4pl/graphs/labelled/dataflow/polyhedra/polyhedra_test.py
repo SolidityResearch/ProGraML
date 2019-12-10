@@ -1,40 +1,17 @@
-# Copyright 2019 the ProGraML authors.
-#
-# Contact Chris Cummins <chrisc.101@gmail.com>.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """Unit tests for //deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra."""
 import typing
 
 import networkx as nx
 import numpy as np
-<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra_test.py
-
-from compilers.llvm import clang
-from compilers.llvm import opt
-from deeplearning.ml4pl.graphs.labelled.dataflow.polyhedra import polyhedra
-=======
 import pytest
 
 from compilers.llvm import clang
 from compilers.llvm import opt
-from deeplearning.ml4pl.graphs.labelled.polyhedra import polyhedra
+from deeplearning.ml4pl.graphs.labelled.dataflow.polyhedra import polyhedra
 from labm8.py import app
->>>>>>> 8be094257... Move //labm8 to //labm8/py.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra_test.py
 from labm8.py import test
 
-
-FLAGS = test.FLAGS
+FLAGS = app.FLAGS
 
 
 class InputPair(typing.NamedTuple):
@@ -69,7 +46,6 @@ def test_MakePolyhedralGraphs_invalid_bytecode():
     list(polyhedra.MakePolyhedralGraphs(bytecode))
 
 
-@test.XFail(reason="TODO(github.com/ChrisCummins/ProGraML/issues/22)")
 def test_MakePolyhedralGraphs_basic_gemm():
   # Snippet adapted from Polybench 4.2, gemm.c
   bytecode = CSourceToInput(

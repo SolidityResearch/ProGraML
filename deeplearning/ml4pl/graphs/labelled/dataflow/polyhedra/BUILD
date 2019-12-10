@@ -1,20 +1,4 @@
 # Annotating program graphs with polyhedral SCoPs
-#
-# Copyright 2019 the ProGraML authors.
-#
-# Contact Chris Cummins <chrisc.101@gmail.com>.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 
 py_library(
     name = "polyhedra",
@@ -23,8 +7,8 @@ py_library(
     deps = [
         "//compilers/llvm:opt",
         "//compilers/llvm:opt_util",
-        "//deeplearning/ml4pl/graphs/unlabelled/llvm2graph:graph_builder",
-        "//deeplearning/ml4pl/graphs/unlabelled/llvm2graph/cfg:llvm_util",
+        "//deeplearning/ml4pl/graphs/unlabelled/cdfg:control_and_data_flow_graph",
+        "//deeplearning/ml4pl/graphs/unlabelled/cfg:llvm_util",
         "//labm8/py:app",
         "//labm8/py:decorators",
     ],
@@ -37,8 +21,9 @@ py_test(
         ":polyhedra",
         "//compilers/llvm:clang",
         "//compilers/llvm:opt",
-        "//deeplearning/ml4pl/graphs/unlabelled/llvm2graph:graph_builder",
+        "//deeplearning/ml4pl/graphs/unlabelled/cdfg:control_and_data_flow_graph",
         "//labm8/py:test",
         "//third_party/py/networkx",
+        "//third_party/py/pytest",
     ],
 )

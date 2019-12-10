@@ -1,44 +1,18 @@
-# Copyright 2019 the ProGraML authors.
-#
-# Contact Chris Cummins <chrisc.101@gmail.com>.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """Unit tests for //deeplearning/ml4pl/graphs/labelled/dataflow/alias_set."""
 import typing
 
 import networkx as nx
 import numpy as np
-<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/alias_set/alias_set_test.py
-
-from compilers.llvm import clang
-from compilers.llvm import opt
-from deeplearning.ml4pl.graphs.labelled.dataflow.alias_set import alias_set
-from deeplearning.ml4pl.graphs.unlabelled.llvm2graph import graph_builder
-from labm8.py import app
-from labm8.py import test
-
-=======
 import pytest
 
 from compilers.llvm import clang
 from compilers.llvm import opt
-from deeplearning.ml4pl.graphs.labelled.alias_set import alias_set
+from deeplearning.ml4pl.graphs.labelled.dataflow.alias_set import alias_set
 from deeplearning.ml4pl.graphs.unlabelled.cdfg import (
   control_and_data_flow_graph as cdfg,
 )
 from labm8.py import app
 from labm8.py import test
->>>>>>> 8be094257... Move //labm8 to //labm8/py.:deeplearning/ml4pl/graphs/labelled/alias_set/alias_set_test.py
 
 FLAGS = app.FLAGS
 
@@ -64,7 +38,7 @@ def CSourceToInputPair(source: str) -> InputPair:
   it is because graph construction or clang is broken.
   """
   bytecode = CSourceToBytecode(source)
-  builder = graph_builder.ProGraMLGraphBuilder()
+  builder = cdfg.ControlAndDataFlowGraphBuilder()
   graph = builder.Build(bytecode)
   return InputPair(graph=graph, bytecode=bytecode)
 
@@ -76,7 +50,6 @@ def test_MakeAliasSetGraphs_invalid_bytecode():
     list(alias_set.MakeAliasSetGraphs(graph, bytecode))
 
 
-@test.XFail(reason="TODO(github.com/ChrisCummins/ProGraML/issues/22)")
 def test_MakeAliasSetGraphs_may_alias_set():
   # https://llvm.org/docs/AliasAnalysis.html
   input_pair = CSourceToInputPair(
@@ -97,15 +70,7 @@ void A() {
   identifiers_in_alias_set = {"A_%16_operand", "A_%10_operand"}
   for node, data in graphs[0].nodes(data=True):
     # Test the 'selector' node.
-<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/alias_set/alias_set_test.py
-<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/alias_set/alias_set_test.py
     assert data["x"][1] in {0, 1}
-=======
-    assert data['x'][1] in {0, 1}
->>>>>>> 4b5c49f10... Add alias set support for multiple embeddings.:deeplearning/ml4pl/graphs/labelled/alias_set/alias_set_test.py
-=======
-    assert data["x"][1] in {0, 1}
->>>>>>> 4242aed2a... Automated code format.:deeplearning/ml4pl/graphs/labelled/alias_set/alias_set_test.py
     # Test the labels.
     if node in identifiers_in_alias_set:
       assert np.array_equal(data["y"], [0, 1, 0])
@@ -113,7 +78,6 @@ void A() {
       assert np.array_equal(data["y"], [1, 0, 0])
 
 
-@test.XFail(reason="TODO(github.com/ChrisCummins/ProGraML/issues/22)")
 def test_MakeAliasSetGraphs_multiple_functions():
   """Test alias """
   # https://llvm.org/docs/AliasAnalysis.html
@@ -148,15 +112,7 @@ void B() {
   for identifiers_in_alias_set, graph in zip(identifiers_in_alias_sets, graphs):
     for node, data in graph.nodes(data=True):
       # Test the 'selector' node.
-<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/alias_set/alias_set_test.py
-<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/alias_set/alias_set_test.py
       assert data["x"][1] in {0, 1}
-=======
-      assert data['x'][1] in {0, 1}
->>>>>>> 4b5c49f10... Add alias set support for multiple embeddings.:deeplearning/ml4pl/graphs/labelled/alias_set/alias_set_test.py
-=======
-      assert data["x"][1] in {0, 1}
->>>>>>> 4242aed2a... Automated code format.:deeplearning/ml4pl/graphs/labelled/alias_set/alias_set_test.py
       # Test the labels.
       if node in identifiers_in_alias_set:
         assert np.array_equal(data["y"], [0, 1, 0])
