@@ -85,6 +85,12 @@ def test_timeout(one_proto: programl_pb2.ProgramGraph):
     annotate.Annotate("test_timeout", one_proto, timeout=1)
 
 
+def test_binary_graph_input(one_proto: programl_pb2.ProgramGraph):
+  """Test that a binary-encoded graph is acceptable."""
+  binary_graph = programl.ToBytes(one_proto, programl.InputOutputFormat.PB)
+  assert annotate.Annotate("reachability", binary_graph, n=3, binary_graph=True)
+
+
 def test_annotate(analysis: str, real_proto: programl_pb2.ProgramGraph, n: int):
 <<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/annotate_test.py
   """Test all annotators over all real protos."""

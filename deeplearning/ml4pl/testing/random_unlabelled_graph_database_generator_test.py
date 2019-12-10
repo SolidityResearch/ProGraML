@@ -1,4 +1,5 @@
 <<<<<<< HEAD
+<<<<<<< HEAD
 # Copyright 2019 the ProGraML authors.
 #
 # Contact Chris Cummins <chrisc.101@gmail.com>.
@@ -16,6 +17,8 @@
 # limitations under the License.
 =======
 >>>>>>> e613281f1... Overhaul dataset generation.
+=======
+>>>>>>> e613281f1... Overhaul dataset generation.
 """Unit tests for //deeplearning/ml4pl/testing:random_unlabelled_graph_database_generator."""
 import sqlalchemy as sql
 
@@ -28,7 +31,10 @@ from labm8.py import decorators
 from labm8.py import test
 
 <<<<<<< HEAD
+<<<<<<< HEAD
 
+=======
+>>>>>>> e613281f1... Overhaul dataset generation.
 =======
 >>>>>>> e613281f1... Overhaul dataset generation.
 FLAGS = test.FLAGS
@@ -60,6 +66,7 @@ def test_CreateRandomProgramGraph(
 
 <<<<<<< HEAD
 <<<<<<< HEAD
+<<<<<<< HEAD
 =======
 >>>>>>> f182a5eba... Use namer for database test fixtures.
 @test.Fixture(
@@ -73,6 +80,9 @@ def test_CreateRandomProgramGraph(
 >>>>>>> e613281f1... Overhaul dataset generation.
 =======
 >>>>>>> f182a5eba... Use namer for database test fixtures.
+=======
+@test.Fixture(scope="function", params=testing_databases.GetDatabaseUrls())
+>>>>>>> e613281f1... Overhaul dataset generation.
 def db(request) -> unlabelled_graph_database.Database:
   """A test fixture which yields an empty graph proto database."""
   yield from testing_databases.YieldDatabase(
