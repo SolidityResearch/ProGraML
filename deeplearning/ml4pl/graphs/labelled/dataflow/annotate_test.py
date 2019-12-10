@@ -62,21 +62,41 @@ def test_invalid_analysis(one_proto: programl_pb2.ProgramGraph, n: int):
   with test.Raises(ValueError) as e_ctx:
     annotate.Annotate("invalid_analysis", one_proto, n)
   assert str(e_ctx.value).startswith("Unknown analysis: invalid_analysis. ")
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/annotate_test.py
+=======
+
+
+def test_invalid_input(analysis: str, n: int):
+  """Test that error is raised if the input is invalid."""
+  invalid_input = programl_pb2.ProgramGraph()
+  with test.Raises(IOError) as e_ctx:
+    annotate.Annotate(analysis, invalid_input, n)
+  assert str(e_ctx.value) == "Failed to serialize input graph"
+>>>>>>> ec6e48210... Raise more clear exceptions.:deeplearning/ml4pl/graphs/labelled/dataflow/annotate_binary_test.py
 
 
 def test_timeout(one_proto: programl_pb2.ProgramGraph):
   """Test that error is raised if the analysis times out."""
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/annotate_test.py
   with test.Raises(data_flow_graphs.AnalysisTimeout):
+=======
+  with test.Raises(annotate.AnalysisTimeout):
+>>>>>>> ec6e48210... Raise more clear exceptions.:deeplearning/ml4pl/graphs/labelled/dataflow/annotate_binary_test.py
     annotate.Annotate("test_timeout", one_proto, timeout=1)
 
 
 def test_annotate(analysis: str, real_proto: programl_pb2.ProgramGraph, n: int):
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/annotate_test.py
   """Test all annotators over all real protos."""
+=======
+  """Test annotating real program graphs."""
+>>>>>>> ec6e48210... Raise more clear exceptions.:deeplearning/ml4pl/graphs/labelled/dataflow/annotate_binary_test.py
   try:
     # Use a lower timeout for testing.
     annotated = annotate.Annotate(analysis, real_proto, n, timeout=30)
 
     # Check that up to 'n' annotated graphs were generated.
+<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/annotate_test.py
     assert 0 <= len(annotated.protos) <= n
 
     # Check that output graphs have the same shape as the input graphs.
@@ -84,6 +104,15 @@ def test_annotate(analysis: str, real_proto: programl_pb2.ProgramGraph, n: int):
       assert len(graph.node) == len(real_proto.node)
       assert len(graph.edge) == len(real_proto.edge)
   except data_flow_graphs.AnalysisTimeout:
+=======
+    assert 0 <= len(annotated.graph) <= n
+
+    # Check that output graphs have the same shape as the input graphs.
+    for graph in annotated.graph:
+      assert len(graph.node) == len(real_proto.node)
+      assert len(graph.edge) == len(real_proto.edge)
+  except annotate.AnalysisTimeout:
+>>>>>>> ec6e48210... Raise more clear exceptions.:deeplearning/ml4pl/graphs/labelled/dataflow/annotate_binary_test.py
     # A timeout error is acceptable.
     pass
 
