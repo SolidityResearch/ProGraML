@@ -1,21 +1,3 @@
-<<<<<<< HEAD
-# Copyright 2019 the ProGraML authors.
-#
-# Contact Chris Cummins <chrisc.101@gmail.com>.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
-=======
->>>>>>> e613281f1... Overhaul dataset generation.
 """This module defines a generator for databases of unlabelled graphs.
 
 When executed as a script, this generates and populates a database of graphs:
@@ -25,26 +7,6 @@ When executed as a script, this generates and populates a database of graphs:
         --proto_db='sqlite:////tmp/protos.db'
 """
 import copy
-<<<<<<< HEAD
-import itertools
-import random
-from typing import List
-from typing import NamedTuple
-from typing import Optional
-
-from deeplearning.ml4pl.graphs.unlabelled import unlabelled_graph_database
-from deeplearning.ml4pl.testing import generator_flags
-from deeplearning.ml4pl.testing import random_programl_generator
-from labm8.py import app
-
-
-# This module is required to pull in FLAGS.
-_unused_imports_ = generator_flags
-
-FLAGS = app.FLAGS
-
-app.DEFINE_integer("proto_count", 1000, "The number of graphs to generate.")
-=======
 import random
 from typing import List
 from typing import NamedTuple
@@ -62,7 +24,6 @@ app.DEFINE_integer(
   10,
   "The number of splits for random graphs. If 0, no splits are assigned.",
 )
->>>>>>> e613281f1... Overhaul dataset generation.
 app.DEFINE_integer(
   "random_proto_pool_size",
   128,
@@ -139,28 +100,20 @@ def PopulateDatabaseWithRandomProgramGraphs(
   return DatabaseAndRows(db, rows)
 
 
-<<<<<<< HEAD
-def PopulateDatabaseWithTestSet(
-  db: unlabelled_graph_database.Database, graph_count: Optional[int] = None
-):
-  """Populate a database with "real" programs."""
-  inputs = itertools.islice(
-    itertools.cycle(random_programl_generator.EnumerateTestSet(n=graph_count)),
-    graph_count,
-  )
-
+def PopulateDatabaseWithRealProtos(db: unlabelled_graph_database.Database):
+  """Populate a database with 100 "real" programs."""
   with db.Session(commit=True) as session:
     session.add_all(
       [
         unlabelled_graph_database.ProgramGraph.Create(proto, ir_id=i + 1)
-        for i, proto in enumerate(inputs)
+        for i, proto in enumerate(
+          random_programl_generator.EnumerateProtoTestSet()
+        )
       ]
     )
   return db
 
 
-=======
->>>>>>> e613281f1... Overhaul dataset generation.
 def Main():
   """Main entry point"""
   PopulateDatabaseWithRandomProgramGraphs(
