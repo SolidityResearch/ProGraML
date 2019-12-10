@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Copyright 2019 the ProGraML authors.
 #
 # Contact Chris Cummins <chrisc.101@gmail.com>.
@@ -13,6 +14,8 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
+=======
+>>>>>>> e613281f1... Overhaul dataset generation.
 """Unit tests for //deeplearning/ml4pl/testing:random_unlabelled_graph_database_generator."""
 import sqlalchemy as sql
 
@@ -24,7 +27,10 @@ from deeplearning.ml4pl.testing import testing_databases
 from labm8.py import decorators
 from labm8.py import test
 
+<<<<<<< HEAD
 
+=======
+>>>>>>> e613281f1... Overhaul dataset generation.
 FLAGS = test.FLAGS
 
 
@@ -52,11 +58,15 @@ def test_CreateRandomProgramGraph(
   assert program_graph.graph_y_dimensionality == graph_y_dimensionality
 
 
+<<<<<<< HEAD
 @test.Fixture(
   scope="function",
   params=testing_databases.GetDatabaseUrls(),
   namer=testing_databases.DatabaseUrlNamer("db"),
 )
+=======
+@test.Fixture(scope="function", params=testing_databases.GetDatabaseUrls())
+>>>>>>> e613281f1... Overhaul dataset generation.
 def db(request) -> unlabelled_graph_database.Database:
   """A test fixture which yields an empty graph proto database."""
   yield from testing_databases.YieldDatabase(
