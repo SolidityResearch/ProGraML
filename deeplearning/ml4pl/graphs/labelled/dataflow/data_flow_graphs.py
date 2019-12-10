@@ -3,140 +3,59 @@ networkx graphs.
 """
 import copy
 import random
+from typing import Iterable
 from typing import List
+from typing import NamedTuple
 from typing import Optional
 
 import networkx as nx
 
-from deeplearning.ml4pl.graphs import programl
 from deeplearning.ml4pl.graphs import programl_pb2
 from labm8.py import app
 
 FLAGS = app.FLAGS
 
-###############################################################################
-# Graph collections.
-###############################################################################
 
+class DataFlowAnnotatedGraph(NamedTuple):
+  """A networkx graph with data flow analysis annotations."""
 
-class DataFlowGraphs(object):
-  """A set of data-flow annotated graphs that abstract the the difference
-  between proto and networkx representations.
-  """
-
-  @property
-  def graphs(self) -> List[nx.MultiDiGraph]:
-    """Access the data flow graphs as networkx."""
-    raise NotImplementedError("abstract class")
-
-  @property
-  def protos(self) -> List[programl_pb2.ProgramGraph]:
-    """Access the data flow graphs as protos."""
-    raise NotImplementedError("abstract class")
-
-
-class NetworkxDataFlowGraphs(DataFlowGraphs):
-  """A set of data-flow annotated graphs."""
-
-  def __init__(self, graphs: List[nx.MultiDiGraph]):
-    self._graphs = graphs
-
-  @property
-  def graphs(self) -> List[nx.MultiDiGraph]:
-    """Access the underlying networkx graphs."""
-    return self._graphs
-
-  @property
-  def protos(self) -> List[programl_pb2.ProgramGraph]:
-    """Convert the networkx graphs to program graph protos."""
-    return [programl.NetworkXToProgramGraph(g) for g in self.graphs]
-
-
-###############################################################################
-# Analysis errors.
-###############################################################################
-
-
-class AnalysisFailed(ValueError):
-  """An error raised if the analysis failed."""
-
-  pass
-
-
-class AnalysisTimeout(AnalysisFailed):
-  def __init__(self, timeout: int):
-    self.timeout = timeout
-
-  def __repr__(self) -> str:
-    return f"Analysis failed to complete within {self.timeout} seconds"
-
-  def __str__(self) -> str:
-    return repr(self)
-
-
-###############################################################################
-# Analysis interfaces.
-###############################################################################
+  # A graph with {x, y} {node, graph}-level annotations set.
+  g: nx.MultiDiGraph
+  # For iterative data flow analyses which have a defined "starting point", this
+  # is the node index of that starting point.
+  root_node: int = 0
+  # For iterative data flow analyses, this is the number of steps that the data
+  # flow analysis required to compute the annotations.
+  data_flow_steps: int = 0
+  # The number of nodes with "positive" analysis results.
+  positive_node_count: int = 0
 
 
 class DataFlowGraphAnnotator(object):
-  """Abstract base class for implement data flow analysis graph annotators."""
+  """Abstract base class for implement networkx graph data flow annotators.
 
-  def __init__(self, unlabelled_graph: programl_pb2.ProgramGraph):
-    """Constructor.
+  A data flow annotator takes as input a networkx graph and a root node, and
+  generates networkx graphs annotated
+  """
 
-    unlabelled_graph: The unlabelled program graph used to produce annotated
-        graphs.
-    """
-    self.unlabelled_graph = unlabelled_graph
-
-  def MakeAnnotated(self, n: int = 0) -> DataFlowGraphs:
-    """Produce up to "n" annotated graphs.
-
-    Args:
-      n: The maximum number of annotated graphs to produce. Multiple graphs are
-        produced by selecting different root nodes for creating annotations.
-        If `n` is provided, the number of annotated graphs generated will be in
-        the range 1 <= x <= min(root_node_count, n). Else, the number of graphs
-        will be equal to root_node_count (i.e. one graph for each root node in
-        the input graph).
-
-    Returns:
-      An AnnotatedGraph instance.
-
-    Raises:
-      AnalysisFailed: If the analysis fails.
-      AnalysisTimeout: If the analysis times out.
-    """
-    raise NotImplementedError("abstract classes")
-
-
-class NetworkXDataFlowGraphAnnotator(DataFlowGraphAnnotator):
-  """A data flow annotator takes as input a networkx graph."""
-
-  def __init__(self, *args, **kwargs):
-    super(NetworkXDataFlowGraphAnnotator, self).__init__(*args, **kwargs)
-    self.g = programl.ProgramGraphToNetworkX(self.unlabelled_graph)
-
-    self.root_nodes = [
-      node
-      for node, data in self.g.nodes(data=True)
-      if self.IsValidRootNode(node, data)
-    ]
-    self.i = -1
-
-  def IsValidRootNode(self, node: int, data) -> bool:
-    """Determine if the given node can be used as a root node."""
+  def RootNodeType(self) -> programl_pb2.Node.Type:
+    """Return the Node.Type enum for root nodes."""
     raise NotImplementedError("abstract class")
 
-  def Annotate(self, g: nx.MultiDiGraph, root_node: int) -> None:
+  def Annotate(
+    self, g: nx.MultiDiGraph, root_node: int
+  ) -> DataFlowAnnotatedGraph:
     """Annotate a networkx graph in-place."""
     raise NotImplementedError("abstract class")
 
-  def MakeAnnotated(self, n: int = 0) -> DataFlowGraphs:
+  def MakeAnnotated(
+    self, g: nx.MultiDiGraph, n: Optional[int] = None
+  ) -> Iterable[DataFlowAnnotatedGraph]:
     """Produce up to "n" annotated graphs.
 
     Args:
+      g: The graph used to produce annotated graphs. The graph is copied and
+        left unmodified.
       n: The maximum number of annotated graphs to produce. Multiple graphs are
         produced by selecting different root nodes for creating annotations.
         If `n` is provided, the number of annotated graphs generated will be in
@@ -145,32 +64,23 @@ class NetworkXDataFlowGraphAnnotator(DataFlowGraphAnnotator):
         the input graph).
 
     Returns:
-      An AnnotatedGraph instance.
-
-    Raises:
-      AnalysisFailed: If the analysis fails.
-      AnalysisTimeout: If the analysis times out.
+      An iterator of DataFlowAnnotatedGraph tuples.
     """
-    if n and n < len(self.root_nodes):
-      random.shuffle(self.root_nodes)
-      root_nodes = self.root_nodes[:n]
-    else:
-      root_nodes = self.root_nodes
+    root_nodes: List[int] = [
+      n for n, type_ in g.nodes(data="type") if type_ == self.RootNodeType()
+    ]
 
-    annotated_graphs = []
+    # Impose the limit on the maximum number of graphs to generate.
+    if n and n < len(root_nodes):
+      random.shuffle(root_nodes)
+      root_nodes = root_nodes[:n]
+
     for root_node in root_nodes:
-      # Note that a deep copy is required to ensure that lists in x/y attributes
-      # are duplicated.
-      annotated_graph = copy.deepcopy(self.g)
-      self.Annotate(annotated_graph, root_node)
-      # Ignore graphs that require no data flow steps.
-      if annotated_graph.graph["data_flow_steps"]:
-        annotated_graphs.append(annotated_graph)
-
-    return NetworkxDataFlowGraphs(annotated_graphs)
+      # Note that a deep copy is required to ensure that x/y lists are
+      # duplicated.
+      yield self.Annotate(copy.deepcopy(g), root_node)
 
 
-# The x value for specifying the root node for iterative data flow analyses
-# that have a defined "starting point".
+# The x value for specifying the root node.
 ROOT_NODE_NO = 0
 ROOT_NODE_YES = 1

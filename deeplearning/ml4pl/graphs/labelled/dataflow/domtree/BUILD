@@ -17,11 +17,7 @@ py_test(
     srcs = ["dominator_tree_test.py"],
     deps = [
         ":dominator_tree",
-        "//deeplearning/ml4pl/graphs:programl",
-        "//deeplearning/ml4pl/graphs:programl_pb_py",
-        "//deeplearning/ml4pl/testing:random_networkx_generator",
-        "//deeplearning/ml4pl/testing:random_programl_generator",
-        "//labm8/py:decorators",
+        "//labm8/py:app",
         "//labm8/py:test",
         "//third_party/py/networkx",
     ],

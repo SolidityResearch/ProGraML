@@ -1,8 +1,4 @@
-<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra_test.py
 """Unit tests for //deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra."""
-=======
-"""Unit tests for //deeplearning/ml4pl/graphs/labelled/polyhedra."""
->>>>>>> 4fa255743... minor fixes:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra_test.py
 import typing
 
 import networkx as nx
@@ -33,14 +29,9 @@ def CSourceToBytecode(source: str) -> str:
   assert not process.returncode
   return process.stdout
 
-<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra_test.py
 
 def CSourceToInput(source: str) -> str:
   """Create a bytecode for the given C source string.
-=======
-def CSourceToInputPair(source: str) -> InputPair:
-  """Create a graph and bytecode for the given C source string.
->>>>>>> 0660f3e93... Fix inconsistency between input CDFG and polly-canonicalized output:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra_test.py
   This is a convenience method for generating test inputs. If this method fails,
   it is because clang is broken.
   """
@@ -76,21 +67,12 @@ void A(double alpha, double beta, double C[1000][1100], double A[1000][1200], do
   assert len(graphs) == 1
 
   # Computed by polly separately.
-<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra_test.py
-<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra_test.py
-=======
->>>>>>> 4242aed2a... Automated code format.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra_test.py
   polyhedral_identifiers = [f"%{i}" for i in range(6, 37)]
 
-=======
-  polyhedral_identifiers = [f'%{i}' for i in range(6, 37)]
- 
->>>>>>> 0660f3e93... Fix inconsistency between input CDFG and polly-canonicalized output:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra_test.py
   for node, data in graphs[0].nodes(data=True):
     # Test the 'selector' node.
     assert data["x"][1] == 0
     # Test the labels.
-<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra_test.py
     if any(
       "original_text" in data and data["original_text"].startswith(identifier)
       for identifier in polyhedral_identifiers
@@ -99,23 +81,7 @@ void A(double alpha, double beta, double C[1000][1100], double A[1000][1200], do
         raise ValueError("Identifier is not polyhedral: " + str(data))
 
       assert np.array_equal(data["y"], [0, 1])
-<<<<<<< HEAD:deeplearning/ml4pl/graphs/labelled/dataflow/polyhedra/polyhedra_test.py
 
 
 if __name__ == "__main__":
-=======
-    if any('original_text' in data and data['original_text'].startswith(identifier)
-           for identifier in polyhedral_identifiers):
-      if data['y'][1] != 1:
-        raise ValueError('Identifier is not polyhedral: ' + str(data))
-      
-      assert np.array_equal(data['y'], [0, 1])
-
-if __name__ == '__main__':
->>>>>>> 0660f3e93... Fix inconsistency between input CDFG and polly-canonicalized output:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra_test.py
-=======
-
-
-if __name__ == "__main__":
->>>>>>> 4242aed2a... Automated code format.:deeplearning/ml4pl/graphs/labelled/polyhedra/polyhedra_test.py
   test.Main()
