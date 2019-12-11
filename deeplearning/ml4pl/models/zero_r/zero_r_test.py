@@ -7,10 +7,16 @@ from deeplearning.ml4pl.models import batch_iterator as batch_iterator_lib
 from deeplearning.ml4pl.models import epoch
 from deeplearning.ml4pl.models import log_database
 from deeplearning.ml4pl.models import logger as logging
+<<<<<<< HEAD:deeplearning/ml4pl/models/zero_r/zero_r_test.py
 from deeplearning.ml4pl.models.zero_r import zero_r
+=======
+from deeplearning.ml4pl.models.ggnn import ggnn
+from deeplearning.ml4pl.models.ggnn import ggnn_config
+>>>>>>> de933d07a... Add a node text embedding enum.:deeplearning/ml4pl/models/ggnn/ggnn_test.py
 from deeplearning.ml4pl.testing import random_graph_tuple_database_generator
 from deeplearning.ml4pl.testing import testing_databases
 from labm8.py import test
+from labm8.py.internal import flags_parsers
 
 FLAGS = test.FLAGS
 
@@ -69,12 +75,24 @@ def epoch_type(request) -> epoch.Type:
   return request.param
 
 
+<<<<<<< HEAD:deeplearning/ml4pl/models/zero_r/zero_r_test.py
 @test.Fixture(
   scope="session",
   params=testing_databases.GetDatabaseUrls(),
   namer=testing_databases.DatabaseUrlNamer("graph_db"),
 )
 def node_classification_graph_db(
+=======
+@test.Fixture(scope="session", params=list(ggnn_config.NodeTextEmbeddingType))
+def node_text_embedding_type(request):
+  return flags_parsers.EnumFlag(
+    ggnn_config.NodeTextEmbeddingType, request.param
+  )
+
+
+@test.Fixture(scope="session", params=testing_databases.GetDatabaseUrls())
+def node_y_graph_db(
+>>>>>>> de933d07a... Add a node text embedding enum.:deeplearning/ml4pl/models/ggnn/ggnn_test.py
   request, graph_count: int, node_y_dimensionality: int,
 ) -> graph_tuple_database.Database:
   """A test fixture which yields a graph database with 256 OpenCL IR entries."""
@@ -122,8 +140,12 @@ def graph_classification_graph_db(
 
 
 def test_load_restore_model_from_checkpoint_smoke_test(
+<<<<<<< HEAD:deeplearning/ml4pl/models/zero_r/zero_r_test.py
   logger: logging.Logger,
   node_classification_graph_db: graph_tuple_database.Database,
+=======
+  logger: logging.Logger, node_y_graph_db: graph_tuple_database.Database,
+>>>>>>> de933d07a... Add a node text embedding enum.:deeplearning/ml4pl/models/ggnn/ggnn_test.py
 ):
   """Test creating and restoring model from checkpoint."""
   run_id = run_id_lib.RunId.GenerateUnique(
@@ -131,7 +153,11 @@ def test_load_restore_model_from_checkpoint_smoke_test(
   )
 
   # Create and initialize an untrained model.
+<<<<<<< HEAD:deeplearning/ml4pl/models/zero_r/zero_r_test.py
   model = zero_r.ZeroR(logger, node_classification_graph_db, run_id=run_id)
+=======
+  model = ggnn.Ggnn(logger, node_y_graph_db, run_id=run_id)
+>>>>>>> de933d07a... Add a node text embedding enum.:deeplearning/ml4pl/models/ggnn/ggnn_test.py
   model.Initialize()
 
   # Smoke test save and restore.
@@ -140,6 +166,7 @@ def test_load_restore_model_from_checkpoint_smoke_test(
 
 
 def test_node_classifier_call(
+<<<<<<< HEAD:deeplearning/ml4pl/models/zero_r/zero_r_test.py
   epoch_type: epoch.Type,
   node_classification_graph_db: graph_tuple_database.Database,
   logger: logging.Logger,
@@ -173,13 +200,22 @@ def test_graph_classifier_call(
   epoch_type: epoch.Type,
   logger: logging.Logger,
   graph_classification_graph_db: graph_tuple_database.Database,
+=======
+  epoch_type: epoch.Type,
+  logger: logging.Logger,
+  node_y_graph_db: graph_tuple_database.Database,
+  node_text_embedding_type,
+>>>>>>> de933d07a... Add a node text embedding enum.:deeplearning/ml4pl/models/ggnn/ggnn_test.py
 ):
-  """Test running a graph classifier."""
+  """Test running a node classifier."""
+  FLAGS.inst2vec_embeddings = node_text_embedding_type
+
   run_id = run_id_lib.RunId.GenerateUnique(
     f"mock{random.randint(0, int(1e6)):06}"
   )
 
   # Create and initialize an untrained model.
+<<<<<<< HEAD:deeplearning/ml4pl/models/zero_r/zero_r_test.py
   model = zero_r.ZeroR(logger, graph_classification_graph_db, run_id=run_id)
   model.Initialize()
 
@@ -190,6 +226,13 @@ def test_graph_classifier_call(
     splits={epoch.Type.TRAIN: [0], epoch.Type.VAL: [1], epoch.Type.TEST: [2],},
     epoch_type=epoch_type,
   )
+=======
+  model = ggnn.Ggnn(logger, node_y_graph_db, run_id=run_id)
+  model.Initialize()
+
+  # Run the model over some random graphs.
+  batch_iterator = MakeBatchIterator(model, node_y_graph_db)
+>>>>>>> de933d07a... Add a node text embedding enum.:deeplearning/ml4pl/models/ggnn/ggnn_test.py
 
   results = model(
     epoch_type=epoch_type, batch_iterator=batch_iterator, logger=logger,
