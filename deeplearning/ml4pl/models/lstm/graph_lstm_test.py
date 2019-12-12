@@ -155,6 +155,13 @@ def graph_db(
 ###############################################################################
 
 
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
+=======
+@test.XFail(
+  reason="TODO(github.com/ChrisCummins/ProGraML/issues/24): Cannot use the given session to evaluate tensor: the tensor's graph is different from the session's graph"
+)
+@test.Parametrize("model_class", (lstm.GraphLstm, lstm.NodeLstm))
+>>>>>>> ab87433e9... Can't sleep fixes.:deeplearning/ml4pl/models/lstm/lstm_test.py
 def test_load_restore_model_from_checkpoint_smoke_test(
   logger: logging.Logger,
   graph_db: graph_tuple_database.Database,
@@ -189,8 +196,19 @@ def test_load_restore_model_from_checkpoint_smoke_test(
     splits={epoch.Type.TRAIN: [0], epoch.Type.VAL: [1], epoch.Type.TEST: [2],},
     epoch_type=epoch.Type.TEST,
   )
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
   model(
     epoch_type=epoch.Type.TEST, batch_iterator=batch_iterator, logger=logger,
+=======
+
+  model = lstm.GraphLstm(
+    logger,
+    graph_y_db,
+    ir_db=ir_db,
+    batch_size=8,
+    padded_sequence_length=100,
+    run_id=run_id,
+>>>>>>> ab87433e9... Can't sleep fixes.:deeplearning/ml4pl/models/lstm/lstm_test.py
   )
 
   # Create a new model instance and restore its state from the checkpoint.
@@ -222,7 +240,11 @@ def test_classifier_call(
     f"mock{random.randint(0, int(1e6)):06}"
   )
 
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
   model = graph_lstm.GraphLstm(
+=======
+  model = lstm.GraphLstm(
+>>>>>>> ab87433e9... Can't sleep fixes.:deeplearning/ml4pl/models/lstm/lstm_test.py
     logger,
     graph_db,
     ir_db=ir_db,
