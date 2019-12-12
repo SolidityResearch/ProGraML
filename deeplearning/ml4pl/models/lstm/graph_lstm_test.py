@@ -156,12 +156,19 @@ def graph_db(
 
 
 <<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
 =======
 @test.XFail(
   reason="TODO(github.com/ChrisCummins/ProGraML/issues/24): Cannot use the given session to evaluate tensor: the tensor's graph is different from the session's graph"
 )
 @test.Parametrize("model_class", (lstm.GraphLstm, lstm.NodeLstm))
 >>>>>>> ab87433e9... Can't sleep fixes.:deeplearning/ml4pl/models/lstm/lstm_test.py
+=======
+@test.Parametrize("model_class", (lstm.GraphLstm, lstm.NodeLstm))
+@test.XFail(
+  reason="TODO(github.com/ChrisCummins/ProGraML/issues/24): Cannot use the given session to evaluate tensor: the tensor's graph is different from the session's graph"
+)
+>>>>>>> 10f007fcb... LSTM WIP.:deeplearning/ml4pl/models/lstm/lstm_test.py
 def test_load_restore_model_from_checkpoint_smoke_test(
   logger: logging.Logger,
   graph_db: graph_tuple_database.Database,
@@ -229,13 +236,25 @@ def test_load_restore_model_from_checkpoint_smoke_test(
   )
 
 
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
 def test_classifier_call(
+=======
+@test.Parametrize("nodes", ("statement", "identifier"))
+def test_node_classifier_call(
+>>>>>>> 10f007fcb... LSTM WIP.:deeplearning/ml4pl/models/lstm/lstm_test.py
   epoch_type: epoch.Type,
   logger: logging.Logger,
   graph_db: graph_tuple_database.Database,
   ir_db: ir_database.Database,
+  nodes: str,
 ):
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
   """Test running a graph classifier."""
+=======
+  """Test running a node classifier."""
+  FLAGS.nodes = nodes
+
+>>>>>>> 10f007fcb... LSTM WIP.:deeplearning/ml4pl/models/lstm/lstm_test.py
   run_id = run_id_lib.RunId.GenerateUnique(
     f"mock{random.randint(0, int(1e6)):06}"
   )
