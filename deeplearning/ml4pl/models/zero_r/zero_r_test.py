@@ -1,6 +1,9 @@
 """Unit tests for //deeplearning/ml4pl/models/zero_r."""
 import random
 
+from labm8.py import test
+from labm8.py.internal import flags_parsers
+
 from deeplearning.ml4pl import run_id as run_id_lib
 from deeplearning.ml4pl.graphs.labelled import graph_tuple_database
 from deeplearning.ml4pl.models import batch_iterator as batch_iterator_lib
@@ -15,8 +18,6 @@ from deeplearning.ml4pl.models.ggnn import ggnn_config
 >>>>>>> de933d07a... Add a node text embedding enum.:deeplearning/ml4pl/models/ggnn/ggnn_test.py
 from deeplearning.ml4pl.testing import random_graph_tuple_database_generator
 from deeplearning.ml4pl.testing import testing_databases
-from labm8.py import test
-from labm8.py.internal import flags_parsers
 
 FLAGS = test.FLAGS
 
