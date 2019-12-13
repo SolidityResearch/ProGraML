@@ -1,29 +1,17 @@
-# Copyright 2019 the ProGraML authors.
-#
-# Contact Chris Cummins <chrisc.101@gmail.com>.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """Split a labelled graph database into {train,val,test} sets."""
-import sqlalchemy as sql
+from typing import List
 
+import numpy as np
+import sqlalchemy as sql
+from sklearn import model_selection
+
+from deeplearning.ml4pl.graphs.labelled import graph_database_reader
 from deeplearning.ml4pl.graphs.labelled import graph_tuple_database
 from deeplearning.ml4pl.ir import ir_database
 from deeplearning.ml4pl.ir import split as ir_split
 from labm8.py import app
 from labm8.py import humanize
-from labm8.py import labtypes
 from labm8.py import prof
-
 
 FLAGS = app.FLAGS
 
@@ -46,13 +34,12 @@ class TrainValTestSplitter(ir_split.TrainValTestSplitter):
       with prof.Profile(
         f"Set {split} split on {humanize.Plural(len(ir_ids), 'IR')}"
       ):
-        for chunk in labtypes.Chunkify(ir_ids, 10000):
-          update = (
-            sql.update(graph_tuple_database.GraphTuple)
-            .where(graph_tuple_database.GraphTuple.ir_id.in_(chunk))
-            .values(split=split)
-          )
-          graph_db.engine.execute(update)
+        update = (
+          sql.update(graph_tuple_database.GraphTuple)
+          .where(graph_tuple_database.GraphTuple.ir_id.in_(ir_ids))
+          .values(split=split)
+        )
+        graph_db.engine.execute(update)
 
 
 def CopySplits(
