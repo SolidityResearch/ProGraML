@@ -76,8 +76,11 @@ def epoch_type(request) -> epoch.Type:
   return request.param
 
 
+<<<<<<< HEAD
 <<<<<<< HEAD:deeplearning/ml4pl/models/zero_r/zero_r_test.py
 <<<<<<< HEAD:deeplearning/ml4pl/models/zero_r/zero_r_test.py
+=======
+>>>>>>> f182a5eba... Use namer for database test fixtures.
 @test.Fixture(
   scope="session",
   params=testing_databases.GetDatabaseUrls(),

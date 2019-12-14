@@ -154,6 +154,7 @@ def opencl_relpaths() -> List[str]:
 
 
 <<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
 @test.Fixture(
   scope="session",
   params=testing_databases.GetDatabaseUrls(),
@@ -161,6 +162,13 @@ def opencl_relpaths() -> List[str]:
 )
 =======
 @test.Fixture(scope="session", params=testing_databases.GetDatabaseUrls())
+=======
+@test.Fixture(
+  scope="session",
+  params=testing_databases.GetDatabaseUrls(),
+  namer=testing_databases.DatabaseUrlNamer("node_y_db"),
+)
+>>>>>>> f182a5eba... Use namer for database test fixtures.:deeplearning/ml4pl/models/lstm/lstm_test.py
 def node_y_db(
   request, opencl_relpaths: List[str], node_y_dimensionality: int,
 ) -> graph_tuple_database.Database:
@@ -178,7 +186,11 @@ def node_y_db(
     yield db
 
 
-@test.Fixture(scope="session", params=testing_databases.GetDatabaseUrls())
+@test.Fixture(
+  scope="session",
+  params=testing_databases.GetDatabaseUrls(),
+  namer=testing_databases.DatabaseUrlNamer("graph_y_db"),
+)
 def graph_y_db(
   request, opencl_relpaths: List[str], graph_y_dimensionality: int,
 ) -> graph_tuple_database.Database:
@@ -196,8 +208,16 @@ def graph_y_db(
     yield db
 
 
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
 @test.Fixture(scope="session", params=testing_databases.GetDatabaseUrls())
 >>>>>>> e45053440... Work in progress on LSTM model.:deeplearning/ml4pl/models/lstm/lstm_test.py
+=======
+@test.Fixture(
+  scope="session",
+  params=testing_databases.GetDatabaseUrls(),
+  namer=testing_databases.DatabaseUrlNamer("ir_db"),
+)
+>>>>>>> f182a5eba... Use namer for database test fixtures.:deeplearning/ml4pl/models/lstm/lstm_test.py
 def ir_db(request, opencl_relpaths: List[str]) -> ir_database.Database:
   """A test fixture which yields an IR database with 256 OpenCL entries."""
   with testing_databases.DatabaseContext(
