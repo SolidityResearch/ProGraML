@@ -1,22 +1,8 @@
-# Copyright 2019 the ProGraML authors.
-#
-# Contact Chris Cummins <chrisc.101@gmail.com>.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """This module exposes a function for generating batch iterators."""
 from typing import Dict
 from typing import List
 
+from deeplearning.ml4pl.graphs.labelled import graph_database_reader
 from deeplearning.ml4pl.graphs.labelled import graph_tuple_database
 from deeplearning.ml4pl.models import batch as batches
 from deeplearning.ml4pl.models import classifier_base
@@ -41,17 +27,10 @@ app.DEFINE_integer(
   "Use this flag to limit the maximum number of instances used in a single "
   "validation epoch.",
 )
-app.DEFINE_integer(
-  "batch_queue_size",
-  10,
-  "Tuning parameter. The maximum number of batches to generate before waiting "
-  "for the model to complete. Must be >= 1.",
-)
 
 
 def MakeBatchIterator(
   model: classifier_base.ClassifierBase,
-  graph_db: graph_tuple_database.Database,
   splits: Dict[epoch.Type, List[int]],
   epoch_type: epoch.Type,
   ctx: progress.ProgressContext = progress.NullContext,
@@ -94,17 +73,13 @@ def MakeBatchIterator(
       splits_for_type
     )
 
-  graph_reader = model.GraphReader(
-    epoch_type=epoch_type,
-    graph_db=graph_db,
-    filters=[split_filter],
-    limit=limit,
-    ctx=ctx,
+  graph_reader = graph_database_reader.BufferedGraphReader.CreateFromFlags(
+    filters=[split_filter], ctx=ctx, limit=limit
   )
 
   return batches.BatchIterator(
     batches=ppar.ThreadedIterator(
-      model.BatchIterator(epoch_type, graph_reader, ctx=ctx),
+      model.BatchIterator(graph_reader, ctx=ctx),
       max_queue_size=FLAGS.batch_queue_size,
     ),
     graph_count=graph_reader.n,
