@@ -27,17 +27,10 @@ app.DEFINE_integer(
   "Use this flag to limit the maximum number of instances used in a single "
   "validation epoch.",
 )
-app.DEFINE_integer(
-  "batch_queue_size",
-  10,
-  "Tuning parameter. The maximum number of batches to generate before waiting "
-  "for the model to complete. Must be >= 1.",
-)
 
 
 def MakeBatchIterator(
   model: classifier_base.ClassifierBase,
-  graph_db: graph_tuple_database.Database,
   splits: Dict[epoch.Type, List[int]],
   epoch_type: epoch.Type,
   ctx: progress.ProgressContext = progress.NullContext,
@@ -80,17 +73,13 @@ def MakeBatchIterator(
       splits_for_type
     )
 
-  graph_reader = model.GraphReader(
-    epoch_type=epoch_type,
-    graph_db=graph_db,
-    filters=[split_filter],
-    limit=limit,
-    ctx=ctx,
+  graph_reader = graph_database_reader.BufferedGraphReader.CreateFromFlags(
+    filters=[split_filter], ctx=ctx, limit=limit
   )
 
   return batches.BatchIterator(
     batches=ppar.ThreadedIterator(
-      model.BatchIterator(epoch_type, graph_reader, ctx=ctx),
+      model.BatchIterator(graph_reader, ctx=ctx),
       max_queue_size=FLAGS.batch_queue_size,
     ),
     graph_count=graph_reader.n,
