@@ -36,6 +36,13 @@ FLAGS = test.FLAGS
 
 # For testing models, always use --strict_graph_segmentation.
 FLAGS.strict_graph_segmentation = True
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
+=======
+
+###############################################################################
+# Utility functions.
+###############################################################################
+>>>>>>> 8807adc73... Work-in-progress on model tests.:deeplearning/ml4pl/models/lstm/lstm_test.py
 
 # For testing the LSTM we can use a reduced size model.
 FLAGS.lang_model_hidden_size = 8
