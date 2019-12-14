@@ -33,12 +33,18 @@ from labm8.py import test
 FLAGS = test.FLAGS
 
 <<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
 # For testing models, always use --strict_graph_segmentation.
 FLAGS.strict_graph_segmentation = True
 
 
 =======
 >>>>>>> e45053440... Work in progress on LSTM model.:deeplearning/ml4pl/models/lstm/lstm_test.py
+=======
+# For testing models, always use --strict_graph_segmentation.
+FLAGS.strict_graph_segmentation = True
+
+>>>>>>> 8807adc73... Work-in-progress on model tests.:deeplearning/ml4pl/models/lstm/lstm_test.py
 ###############################################################################
 # Utility functions.
 ###############################################################################
