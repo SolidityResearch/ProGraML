@@ -104,8 +104,61 @@ def opencl_relpaths() -> List[str]:
   return list(set(opencl_df.relpath.values))
 
 
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
 @test.Fixture(scope="session")
 def ir_db(opencl_relpaths: List[str]) -> ir_database.Database:
+=======
+@test.Fixture(
+  scope="session",
+  params=testing_databases.GetDatabaseUrls(),
+  namer=testing_databases.DatabaseUrlNamer("node_y_db"),
+)
+def node_y_db(
+  request, opencl_relpaths: List[str], node_y_dimensionality: int,
+) -> graph_tuple_database.Database:
+  """A test fixture which yields a graph database with 256 OpenCL IR entries."""
+  with testing_databases.DatabaseContext(
+    graph_tuple_database.Database, request.param
+  ) as db:
+    PopulateOpenClGraphs(
+      db,
+      opencl_relpaths,
+      node_y_dimensionality=node_y_dimensionality,
+      graph_x_dimensionality=0,
+      graph_y_dimensionality=0,
+    )
+    yield db
+
+
+@test.Fixture(
+  scope="session",
+  params=testing_databases.GetDatabaseUrls(),
+  namer=testing_databases.DatabaseUrlNamer("graph_y_db"),
+)
+def graph_y_db(
+  request, opencl_relpaths: List[str], graph_y_dimensionality: int,
+) -> graph_tuple_database.Database:
+  """A test fixture which yields a graph database with 256 OpenCL IR entries."""
+  with testing_databases.DatabaseContext(
+    graph_tuple_database.Database, request.param
+  ) as db:
+    PopulateOpenClGraphs(
+      db,
+      opencl_relpaths,
+      node_y_dimensionality=0,
+      graph_x_dimensionality=2,
+      graph_y_dimensionality=graph_y_dimensionality,
+    )
+    yield db
+
+
+@test.Fixture(
+  scope="session",
+  params=testing_databases.GetDatabaseUrls(),
+  namer=testing_databases.DatabaseUrlNamer("ir_db"),
+)
+def ir_db(request, opencl_relpaths: List[str]) -> ir_database.Database:
+>>>>>>> f182a5eba... Use namer for database test fixtures.:deeplearning/ml4pl/models/lstm/lstm_test.py
   """A test fixture which yields an IR database with 256 OpenCL entries."""
   with testing_databases.DatabaseContext(
     ir_database.Database, testing_databases.GetDatabaseUrls()[0]

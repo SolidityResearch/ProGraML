@@ -59,14 +59,20 @@ def test_CreateRandomProgramGraph(
 
 
 <<<<<<< HEAD
+<<<<<<< HEAD
+=======
+>>>>>>> f182a5eba... Use namer for database test fixtures.
 @test.Fixture(
   scope="function",
   params=testing_databases.GetDatabaseUrls(),
   namer=testing_databases.DatabaseUrlNamer("db"),
 )
+<<<<<<< HEAD
 =======
 @test.Fixture(scope="function", params=testing_databases.GetDatabaseUrls())
 >>>>>>> e613281f1... Overhaul dataset generation.
+=======
+>>>>>>> f182a5eba... Use namer for database test fixtures.
 def db(request) -> unlabelled_graph_database.Database:
   """A test fixture which yields an empty graph proto database."""
   yield from testing_databases.YieldDatabase(
