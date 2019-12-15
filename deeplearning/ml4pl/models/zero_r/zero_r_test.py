@@ -258,6 +258,7 @@ def test_graph_classifier_call(
     splits={epoch.Type.TRAIN: [0], epoch.Type.VAL: [1], epoch.Type.TEST: [2],},
     epoch_type=epoch_type,
   )
+<<<<<<< HEAD
 =======
   model = ggnn.Ggnn(logger, node_y_graph_db, run_id=run_id)
   model.Initialize()
@@ -295,6 +296,8 @@ def test_graph_classifier_call(
 
   # Run the model over some random graphs.
   batch_iterator = MakeBatchIterator(model, graph_y_graph_db)
+=======
+>>>>>>> 2953d2282... Add epoch type printout to batch iterator.
 
   results = model(
     epoch_type=epoch_type, batch_iterator=batch_iterator, logger=logger,

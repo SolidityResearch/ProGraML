@@ -8,6 +8,7 @@ from datasets.opencl.device_mapping import opencl_device_mapping_dataset
 <<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
 <<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
 from deeplearning.ml4pl import run_id as run_id_lib
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
 from deeplearning.ml4pl.graphs.labelled import graph_tuple_database
 from deeplearning.ml4pl.graphs.labelled.devmap import make_devmap_dataset
 from deeplearning.ml4pl.ir import ir_database
@@ -17,12 +18,18 @@ from deeplearning.ml4pl.models import batch_iterator as batch_iterator_lib
 from deeplearning.ml4pl import run_id as run_id_lib
 >>>>>>> b74267c14... Work in progress on LSTM model.:deeplearning/ml4pl/models/lstm/lstm_test.py
 from deeplearning.ml4pl.graphs.labelled import graph_database_reader
+=======
+>>>>>>> 2953d2282... Add epoch type printout to batch iterator.:deeplearning/ml4pl/models/lstm/lstm_test.py
 from deeplearning.ml4pl.graphs.labelled import graph_tuple_database
 from deeplearning.ml4pl.graphs.labelled.devmap import make_devmap_dataset
 from deeplearning.ml4pl.graphs.unlabelled import unlabelled_graph_database
 from deeplearning.ml4pl.ir import ir_database
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
 from deeplearning.ml4pl.models import batch as batches
 >>>>>>> e45053440... Work in progress on LSTM model.:deeplearning/ml4pl/models/lstm/lstm_test.py
+=======
+from deeplearning.ml4pl.models import batch_iterator as batch_iterator_lib
+>>>>>>> 2953d2282... Add epoch type printout to batch iterator.:deeplearning/ml4pl/models/lstm/lstm_test.py
 from deeplearning.ml4pl.models import epoch
 from deeplearning.ml4pl.models import log_database
 from deeplearning.ml4pl.models import logger as logging
@@ -93,6 +100,7 @@ def CreateRandomString(min_length: int = 1, max_length: int = 1024) -> str:
 <<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
 =======
 
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
 def MakeBatchIterator(
   model: lstm.LstmBase, graph_db: graph_tuple_database.Database
 ) -> Iterable[graph_tuple_database.GraphTuple]:
@@ -105,6 +113,8 @@ def MakeBatchIterator(
 
 >>>>>>> e45053440... Work in progress on LSTM model.:deeplearning/ml4pl/models/lstm/lstm_test.py
 
+=======
+>>>>>>> 2953d2282... Add epoch type printout to batch iterator.:deeplearning/ml4pl/models/lstm/lstm_test.py
 ###############################################################################
 # Fixtures.
 ###############################################################################
@@ -396,7 +406,12 @@ def test_graph_classifier_call(
 >>>>>>> e45053440... Work in progress on LSTM model.:deeplearning/ml4pl/models/lstm/lstm_test.py
   model.Initialize()
 
-  batch_iterator = MakeBatchIterator(model, graph_y_db)
+  batch_iterator = batch_iterator = batch_iterator_lib.MakeBatchIterator(
+    model=model,
+    graph_db=graph_y_db,
+    splits={epoch.Type.TRAIN: [0], epoch.Type.VAL: [1], epoch.Type.TEST: [2],},
+    epoch_type=epoch_type,
+  )
 
   results = model(
     epoch_type=epoch_type, batch_iterator=batch_iterator, logger=logger,
@@ -480,7 +495,12 @@ def test_node_classifier_call(
   )
   model.Initialize()
 
-  batch_iterator = MakeBatchIterator(model, node_y_db)
+  batch_iterator = batch_iterator = batch_iterator_lib.MakeBatchIterator(
+    model=model,
+    graph_db=node_y_db,
+    splits={epoch.Type.TRAIN: [0], epoch.Type.VAL: [1], epoch.Type.TEST: [2],},
+    epoch_type=epoch_type,
+  )
 
   results = model(
     epoch_type=epoch_type, batch_iterator=batch_iterator, logger=logger,
