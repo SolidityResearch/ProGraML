@@ -1,3 +1,4 @@
+<<<<<<< HEAD
 # Copyright 2019 the ProGraML authors.
 #
 # Contact Chris Cummins <chrisc.101@gmail.com>.
@@ -17,6 +18,11 @@
 from labm8.py import app
 
 <<<<<<< HEAD:deeplearning/ml4pl/testing/generator_flags.py
+=======
+"""Flags for random data generators."""
+from labm8.py import app
+
+>>>>>>> 9117e0833... Work-in-progress on LSTM node classifier.
 
 FLAGS = app.FLAGS
 
@@ -25,6 +31,7 @@ app.DEFINE_integer(
   "split_count",
   10,
   "The number of splits for random graphs. If 0, no splits are assigned.",
+<<<<<<< HEAD
 =======
 py_test(
     name = "pipeline_test",
@@ -36,4 +43,6 @@ py_test(
         "//labm8/py:test",
     ],
 >>>>>>> 8be094257... Move //labm8 to //labm8/py.:compilers/llvm/tests/BUILD
+=======
+>>>>>>> 9117e0833... Work-in-progress on LSTM node classifier.
 )
