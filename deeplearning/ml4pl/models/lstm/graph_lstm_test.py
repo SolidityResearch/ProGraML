@@ -308,6 +308,7 @@ def test_load_restore_model_from_checkpoint_smoke_test(
 >>>>>>> ab87433e9... Can't sleep fixes.:deeplearning/ml4pl/models/lstm/lstm_test.py
   )
 
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
   # Create a new model instance and restore its state from the checkpoint.
   new_model = graph_lstm.GraphLstm(
     logger, graph_db, ir_db=ir_db, batch_size=32, padded_sequence_length=10,
@@ -323,6 +324,17 @@ def test_load_restore_model_from_checkpoint_smoke_test(
   )
   new_model(
     epoch_type=epoch.Type.TEST, batch_iterator=batch_iterator, logger=logger,
+=======
+  batch_iterator = batch_iterator = batch_iterator_lib.MakeBatchIterator(
+    model=model,
+    graph_db=graph_y_db,
+    splits={epoch.Type.TRAIN: [0], epoch.Type.VAL: [1], epoch.Type.TEST: [2],},
+    epoch_type=epoch_type,
+  )
+
+  results = model(
+    epoch_type=epoch_type, batch_iterator=batch_iterator, logger=logger,
+>>>>>>> 2953d2282... Add epoch type printout to batch iterator.:deeplearning/ml4pl/models/lstm/lstm_test.py
   )
 
 
@@ -380,9 +392,15 @@ def test_node_classifier_call(
   )
   model.Initialize()
 
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
   batch_iterator = batch_iterator_lib.MakeBatchIterator(
     model=model,
     graph_db=graph_db,
+=======
+  batch_iterator = batch_iterator = batch_iterator_lib.MakeBatchIterator(
+    model=model,
+    graph_db=node_y_db,
+>>>>>>> 2953d2282... Add epoch type printout to batch iterator.:deeplearning/ml4pl/models/lstm/lstm_test.py
     splits={epoch.Type.TRAIN: [0], epoch.Type.VAL: [1], epoch.Type.TEST: [2],},
     epoch_type=epoch_type,
   )
