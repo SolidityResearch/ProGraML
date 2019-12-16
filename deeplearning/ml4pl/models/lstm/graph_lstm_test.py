@@ -35,7 +35,6 @@ from deeplearning.ml4pl.testing import (
 )
 from deeplearning.ml4pl.testing import testing_databases
 from labm8.py import test
-from labm8.py.internal import flags_parsers
 
 FLAGS = test.FLAGS
 
@@ -96,12 +95,30 @@ def logger(log_db: log_database.Database) -> logging.Logger:
     yield logger
 
 
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
+=======
+@test.Fixture(scope="session", params=(0, 2), namer=lambda x: f"graph_x:{x}")
+def graph_x_dimensionality(request) -> int:
+  """A test fixture which enumerates graph feature dimensionalities."""
+  return request.param
+
+
+>>>>>>> f579dd90f... LSTM test fixes.:deeplearning/ml4pl/models/lstm/lstm_test.py
 @test.Fixture(scope="session", params=(2, 104), namer=lambda x: f"graph_y:{x}")
 def graph_y_dimensionality(request) -> int:
   """A test fixture which enumerates graph label dimensionalities."""
   return request.param
 
 
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
+=======
+@test.Fixture(scope="session", params=(2, 3), namer=lambda x: f"node_y:{x}")
+def node_y_dimensionality(request) -> int:
+  """A test fixture which enumerates graph label dimensionalities."""
+  return request.param
+
+
+>>>>>>> f579dd90f... LSTM test fixes.:deeplearning/ml4pl/models/lstm/lstm_test.py
 @test.Fixture(
   scope="session", params=list(epoch.Type), namer=lambda x: x.name.lower()
 )
@@ -142,6 +159,7 @@ def node_y_db(
       node_y_dimensionality=node_y_dimensionality,
       graph_x_dimensionality=0,
       graph_y_dimensionality=0,
+      split_count=3,
     )
     yield db
 
@@ -165,6 +183,7 @@ def graph_y_db(
       node_y_dimensionality=0,
       graph_x_dimensionality=2,
       graph_y_dimensionality=graph_y_dimensionality,
+      split_count=3,
     )
     yield db
 
