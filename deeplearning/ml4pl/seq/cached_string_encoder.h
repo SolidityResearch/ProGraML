@@ -1,18 +1,3 @@
-// Copyright 2019 the ProGraML authors.
-//
-// Contact Chris Cummins <chrisc.101@gmail.com>.
-//
-// Licensed under the Apache License, Version 2.0 (the "License");
-// you may not use this file except in compliance with the License.
-// You may obtain a copy of the License at
-//
-//    http://www.apache.org/licenses/LICENSE-2.0
-//
-// Unless required by applicable law or agreed to in writing, software
-// distributed under the License is distributed on an "AS IS" BASIS,
-// WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-// See the License for the specific language governing permissions and
-// limitations under the License.
 #pragma once
 
 #include <vector>
@@ -49,12 +34,11 @@ class CachedStringEncoder {
   // [0, vocabulary.size()], where vocabulary.size() represents an unknown
   // character. The length of the encoded array is in the range
   // [0, input.size()].
-  std::vector<int> EncodeAndCache(const std::string& input);
-  std::vector<int> Encode(const std::string& input) const;
+  std::vector<int> Encode(const std::string& input);
 
   // Determine if any of a set of strings starts with prefix.
   // This assumes that the prefix is not empty.
-  bool HasPrefix(const std::string& prefix) const;
+  bool HasPrefix(const std::string& prefix);
 
   // Retrieve the encoded value for an unknown token.
   int UnknownElement() const { return _unknown_element; }
