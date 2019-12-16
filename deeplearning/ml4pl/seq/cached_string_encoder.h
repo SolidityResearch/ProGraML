@@ -34,12 +34,11 @@ class CachedStringEncoder {
   // [0, vocabulary.size()], where vocabulary.size() represents an unknown
   // character. The length of the encoded array is in the range
   // [0, input.size()].
-  std::vector<int> EncodeAndCache(const std::string& input);
-  std::vector<int> Encode(const std::string& input) const;
+  std::vector<int> Encode(const std::string& input);
 
   // Determine if any of a set of strings starts with prefix.
   // This assumes that the prefix is not empty.
-  bool HasPrefix(const std::string& prefix) const;
+  bool HasPrefix(const std::string& prefix);
 
   // Retrieve the encoded value for an unknown token.
   int UnknownElement() const { return _unknown_element; }

@@ -1,8 +1,10 @@
 #include "deeplearning/ml4pl/seq/cached_string_encoder.h"
 
+#include "labm8/cpp/logging.h"
+
 namespace ml4pl {
 
-std::vector<int> CachedStringEncoder::EncodeAndCache(const std::string& input) {
+std::vector<int> CachedStringEncoder::Encode(const std::string& input) {
   // Check to see if there is a cache entry for the string, and if so, return
   // it.
   auto cache_entry = _cache.find(input);
@@ -10,75 +12,56 @@ std::vector<int> CachedStringEncoder::EncodeAndCache(const std::string& input) {
     return cache_entry->second;
   }
 
-  // Else encode the string, cache it, and return it.
-  auto encoded = Encode(input);
-  _cache.insert({input, encoded});
-  return encoded;
-}
-
-std::vector<int> CachedStringEncoder::Encode(const std::string& input) const {
-  // Encode a string by greedy substring matching. Using a sliding substring
-  // over the input. At each step, we expand the substring one character to the
-  // right and try to match a prefix in the vocabulary. If there is a match,
-  // we advance another character. Once we no longer have an exact submatch, or
-  // we have reached the end of the input, we retreat one character at a time,
-  // attempting to match an exact token in the vocabulary. If retreat all the
-  // way down to a single character without matching anything in the vocabulary,
-  // we emit an "unknown vocabulary element" token and proceed.
   std::vector<int> encoded;
 
   int pos = 0;
-  int len = 1;
-  while (pos + len <= input.size()) {
+  int len = 2;
+  while (pos < input.size()) {
     auto candidate_token = input.substr(pos, len);
-    if (HasPrefix(candidate_token) && pos + len < input.size()) {
-      // Prefix matched. Advance to the next character in the candidate token.
+    if (HasPrefix(candidate_token)) {
+      // Prefix matched.
+
+      if (candidate_token.size() < len) {
+        // We have reached the end of the string. Emit an encoded token or
+        // unknown elements.
+        auto token = _vocabulary.find(candidate_token);
+        if (token == _vocabulary.end()) {
+          for (int i = 0; i < candidate_token.size(); ++i) {
+            encoded.push_back(_unknown_element);
+          }
+        } else {
+          encoded.push_back(token->second);
+        }
+        break;
+      }
+
+      // Advance to the next character in the candidate token.
       ++len;
     } else {
-      // We no longer have a match for the candidate token, or have reached
-      // the end of the input. Backtrack, one character at a time, attempting
-      // to find a multichar match in the vocabulary.
-      while (len > 1) {
-        auto backtrack_token = _vocabulary.find(input.substr(pos, len));
-        if (backtrack_token != _vocabulary.end()) {
-          encoded.push_back(backtrack_token->second);
-          break;
-        }
-        --len;
-      }
-      // We are down to just a single character without finding a match. Process
-      // the character and move on.
-      if (len == 1) {
-        auto backtrack_token = _vocabulary.find(input.substr(pos, len));
-        if (backtrack_token == _vocabulary.end()) {
+      // Candidate token doesn't match any prefixes in the vocabulary, so either
+      // emit the last known good token, or unknown tokens.
+      auto backtrack_token = _vocabulary.find(input.substr(pos, len - 1));
+      if (backtrack_token == _vocabulary.end()) {
+        for (int i = 0; i < len - 1; ++i) {
           encoded.push_back(_unknown_element);
-        } else {
-          encoded.push_back(backtrack_token->second);
         }
+      } else {
+        encoded.push_back(backtrack_token->second);
       }
 
-      pos += len;
-      len = 1;
+      // Advance.
+      pos = pos + len - 1;
+      len = 2;
     }
   }
 
-  // We reached the end of the input but may not have emitted all tokens. If we
-  // still have un-emitted tokens, that means that we must
-  if (pos < static_cast<int>(input.size()) - 1) {
-    auto tail_token = _vocabulary.find(input.substr(pos));
-    if (tail_token == _vocabulary.end()) {
-      auto encoded_tail = Encode(input.substr(pos, input.size() - pos));
-      encoded.insert(encoded.end(), encoded_tail.begin(), encoded_tail.end());
-      encoded.push_back(_unknown_element);
-    } else {
-      encoded.push_back(tail_token->second);
-    }
-  }
+  // Insert the encoded text into the cache.
+  _cache.insert({input, encoded});
 
   return encoded;
 }
 
-bool CachedStringEncoder::HasPrefix(const std::string& prefix) const {
+bool CachedStringEncoder::HasPrefix(const std::string& prefix) {
   for (auto& token : _tokens) {
     if (token.rfind(prefix, 0) == 0) {
       return true;
