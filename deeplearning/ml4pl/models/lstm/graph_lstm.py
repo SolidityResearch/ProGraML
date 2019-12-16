@@ -1,18 +1,3 @@
-# Copyright 2019 the ProGraML authors.
-#
-# Contact Chris Cummins <chrisc.101@gmail.com>.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """This modules defines an LSTM model for graph-level classification."""
 import enum
 from typing import Iterable
@@ -33,7 +18,6 @@ from deeplearning.ml4pl.seq import graph2seq
 from deeplearning.ml4pl.seq import ir2seq
 from labm8.py import app
 from labm8.py import progress
-
 
 FLAGS = app.FLAGS
 
@@ -73,35 +57,18 @@ class GraphLstmBatch(NamedTuple):
 
   # Shape (batch_size, padded_sequence_length, 1), dtype np.int32
   encoded_sequences: np.array
-  # Shape (batch_size, graph_x_dimensionality), dtype np.int64
+  # Shape (batch_size, graph_x_dimensionality), dtype np.int32
   graph_x: np.array
   # Shape (batch_size, graph_y_dimensionality), dtype np.float32
   graph_y: np.array
 
   @property
-  def targets(self) -> np.array:
-    """Return the targets for predictions.
-    Shape (batch_size, graph_y_dimensionality)."""
-    return self.graph_y
-
-  @property
-  def x(self) -> List[np.array]:
-    """Return the model 'x' inputs."""
+  def x(self):
     return [self.encoded_sequences, self.graph_x]
 
   @property
-  def y(self) -> List[np.array]:
-    """Return the model 'y' inputs."""
+  def y(self):
     return [self.graph_y, self.graph_y]
-
-  @staticmethod
-  def GetPredictions(
-    model_output, ctx: progress.ProgressContext = progress.NullContext
-  ) -> np.array:
-    """Reshape the model outputs to an array of predictions of same shape as
-    targets."""
-    del ctx  # Unused.
-    return model_output[0]
 
 
 class GraphLstm(lstm_base.LstmBase):
@@ -133,7 +100,7 @@ class GraphLstm(lstm_base.LstmBase):
     )
     graph_x_input = tf.compat.v1.keras.layers.Input(
       shape=(self.graph_db.graph_x_dimensionality,),
-      dtype="float32",
+      dtype="flaot32",
       name="graph_x",
     )
 
@@ -216,7 +183,7 @@ class GraphLstm(lstm_base.LstmBase):
 
     graphs = self.GetBatchOfGraphs(graph_iterator)
     if not graphs:
-      return batches.EndOfBatches()
+      return batches.Data(graph_ids=[], data=None)
 
     # Encode the graphs in the batch.
     encoded_sequences: List[np.array] = self.encoder.Encode(graphs, ctx=ctx)
@@ -244,3 +211,6 @@ class GraphLstm(lstm_base.LstmBase):
         graph_y=np.vstack(graph_y),
       ),
     )
+
+  def ReshapeLoss(self, loss):
+    return loss[0]

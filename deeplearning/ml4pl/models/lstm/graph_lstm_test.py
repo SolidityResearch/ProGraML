@@ -1,18 +1,3 @@
-# Copyright 2019 the ProGraML authors.
-#
-# Contact Chris Cummins <chrisc.101@gmail.com>.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """Unit tests for //deeplearning/ml4pl/models/lstm:graph_lstm."""
 import random
 import string
@@ -22,7 +7,6 @@ from datasets.opencl.device_mapping import opencl_device_mapping_dataset
 from deeplearning.ml4pl import run_id as run_id_lib
 from deeplearning.ml4pl.graphs.labelled import graph_tuple_database
 from deeplearning.ml4pl.graphs.labelled.devmap import make_devmap_dataset
-from deeplearning.ml4pl.graphs.unlabelled import unlabelled_graph_database
 from deeplearning.ml4pl.ir import ir_database
 from deeplearning.ml4pl.models import batch_iterator as batch_iterator_lib
 from deeplearning.ml4pl.models import epoch
@@ -30,9 +14,6 @@ from deeplearning.ml4pl.models import log_database
 from deeplearning.ml4pl.models import logger as logging
 from deeplearning.ml4pl.models.lstm import graph_lstm
 from deeplearning.ml4pl.testing import random_graph_tuple_database_generator
-from deeplearning.ml4pl.testing import (
-  random_unlabelled_graph_database_generator,
-)
 from deeplearning.ml4pl.testing import testing_databases
 from labm8.py import test
 
@@ -40,29 +21,13 @@ FLAGS = test.FLAGS
 
 # For testing models, always use --strict_graph_segmentation.
 FLAGS.strict_graph_segmentation = True
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
-=======
 
-###############################################################################
-# Utility functions.
-###############################################################################
->>>>>>> 8807adc73... Work-in-progress on model tests.:deeplearning/ml4pl/models/lstm/lstm_test.py
-
-# For testing the LSTM we can use a reduced size model.
-FLAGS.lang_model_hidden_size = 8
-FLAGS.heuristic_model_hidden_size = 4
-
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
-# No test coverage for hot code.
-MODULE_UNDER_TEST = None
 
 ###############################################################################
 # Utility functions.
 ###############################################################################
 
 
-=======
->>>>>>> a44eb165f... Work in progress on LSTM.:deeplearning/ml4pl/models/lstm/lstm_test.py
 def CreateRandomString(min_length: int = 1, max_length: int = 1024) -> str:
   """Generate a random string."""
   return "".join(
@@ -95,30 +60,12 @@ def logger(log_db: log_database.Database) -> logging.Logger:
     yield logger
 
 
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
-=======
-@test.Fixture(scope="session", params=(0, 2), namer=lambda x: f"graph_x:{x}")
-def graph_x_dimensionality(request) -> int:
-  """A test fixture which enumerates graph feature dimensionalities."""
-  return request.param
-
-
->>>>>>> f579dd90f... LSTM test fixes.:deeplearning/ml4pl/models/lstm/lstm_test.py
 @test.Fixture(scope="session", params=(2, 104), namer=lambda x: f"graph_y:{x}")
 def graph_y_dimensionality(request) -> int:
   """A test fixture which enumerates graph label dimensionalities."""
   return request.param
 
 
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
-=======
-@test.Fixture(scope="session", params=(2, 3), namer=lambda x: f"node_y:{x}")
-def node_y_dimensionality(request) -> int:
-  """A test fixture which enumerates graph label dimensionalities."""
-  return request.param
-
-
->>>>>>> f579dd90f... LSTM test fixes.:deeplearning/ml4pl/models/lstm/lstm_test.py
 @test.Fixture(
   scope="session", params=list(epoch.Type), namer=lambda x: x.name.lower()
 )
@@ -136,68 +83,15 @@ def opencl_relpaths() -> List[str]:
   return list(set(opencl_df.relpath.values))
 
 
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
-@test.Fixture(scope="session")
-def ir_db(opencl_relpaths: List[str]) -> ir_database.Database:
-=======
-@test.Fixture(
-  scope="session",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("node_y_db"),
-)
-def node_y_db(
-  request, opencl_relpaths: List[str], node_y_dimensionality: int,
-) -> graph_tuple_database.Database:
-  """A test fixture which yields a graph database with 100 real graphs."""
-  with testing_databases.DatabaseContext(
-    graph_tuple_database.Database, request.param
-  ) as db:
-    random_graph_tuple_database_generator.PopulateWithTestSet(
-      db,
-      len(opencl_relpaths),
-      node_x_dimensionality=2,
-      node_y_dimensionality=node_y_dimensionality,
-      graph_x_dimensionality=0,
-      graph_y_dimensionality=0,
-      split_count=3,
-    )
-    yield db
-
-
-@test.Fixture(
-  scope="session",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("graph_y_db"),
-)
-def graph_y_db(
-  request, opencl_relpaths: List[str], graph_y_dimensionality: int,
-) -> graph_tuple_database.Database:
-  """A test fixture which yields a graph database with 256 OpenCL IR entries."""
-  with testing_databases.DatabaseContext(
-    graph_tuple_database.Database, request.param
-  ) as db:
-    random_graph_tuple_database_generator.PopulateWithTestSet(
-      db,
-      len(opencl_relpaths),
-      node_x_dimensionality=2,
-      node_y_dimensionality=0,
-      graph_x_dimensionality=2,
-      graph_y_dimensionality=graph_y_dimensionality,
-      split_count=3,
-    )
-    yield db
-
-
 @test.Fixture(
   scope="session",
   params=testing_databases.GetDatabaseUrls(),
   namer=testing_databases.DatabaseUrlNamer("ir_db"),
 )
 def ir_db(request, opencl_relpaths: List[str]) -> ir_database.Database:
->>>>>>> f182a5eba... Use namer for database test fixtures.:deeplearning/ml4pl/models/lstm/lstm_test.py
   """A test fixture which yields an IR database with 256 OpenCL entries."""
   with testing_databases.DatabaseContext(
-    ir_database.Database, testing_databases.GetDatabaseUrls()[0]
+    ir_database.Database, request.param
   ) as db:
     rows = []
     # Create IRs using OpenCL relpaths.
@@ -219,14 +113,17 @@ def ir_db(request, opencl_relpaths: List[str]) -> ir_database.Database:
     yield db
 
 
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
-@test.Fixture(scope="session")
+@test.Fixture(
+  scope="session",
+  params=testing_databases.GetDatabaseUrls(),
+  namer=testing_databases.DatabaseUrlNamer("graph_db"),
+)
 def graph_db(
-  opencl_relpaths: List[str], graph_y_dimensionality: int,
+  request, opencl_relpaths: List[str], graph_y_dimensionality: int,
 ) -> graph_tuple_database.Database:
   """A test fixture which yields a graph database with 256 OpenCL IR entries."""
   with testing_databases.DatabaseContext(
-    graph_tuple_database.Database, testing_databases.GetDatabaseUrls()[0]
+    graph_tuple_database.Database, request.param
   ) as db:
     random_graph_tuple_database_generator.PopulateWithTestSet(
       db,
@@ -237,22 +134,6 @@ def graph_db(
       graph_y_dimensionality=graph_y_dimensionality,
       split_count=3,
     )
-=======
-@test.Fixture(
-  scope="session",
-  params=testing_databases.GetDatabaseUrls(),
-  namer=testing_databases.DatabaseUrlNamer("proto_db"),
-)
-def proto_db(request, opencl_relpaths: List[str]) -> ir_database.Database:
-  """A test fixture which yields an IR database with 256 OpenCL entries."""
-  with testing_databases.DatabaseContext(
-    unlabelled_graph_database.Database, request.param
-  ) as db:
-    random_unlabelled_graph_database_generator.PopulateDatabaseWithTestSet(
-      db, len(opencl_relpaths)
-    )
-
->>>>>>> 9117e0833... Work-in-progress on LSTM node classifier.:deeplearning/ml4pl/models/lstm/lstm_test.py
     yield db
 
 
@@ -261,20 +142,10 @@ def proto_db(request, opencl_relpaths: List[str]) -> ir_database.Database:
 ###############################################################################
 
 
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
-=======
+@test.Parametrize("model_class", graph_lstm.GraphLstm)
 @test.XFail(
   reason="TODO(github.com/ChrisCummins/ProGraML/issues/24): Cannot use the given session to evaluate tensor: the tensor's graph is different from the session's graph"
 )
-@test.Parametrize("model_class", (lstm.GraphLstm, lstm.NodeLstm))
->>>>>>> ab87433e9... Can't sleep fixes.:deeplearning/ml4pl/models/lstm/lstm_test.py
-=======
-@test.Parametrize("model_class", (lstm.GraphLstm, lstm.NodeLstm))
-@test.XFail(
-  reason="TODO(github.com/ChrisCummins/ProGraML/issues/24): Cannot use the given session to evaluate tensor: the tensor's graph is different from the session's graph"
-)
->>>>>>> 10f007fcb... LSTM WIP.:deeplearning/ml4pl/models/lstm/lstm_test.py
 def test_load_restore_model_from_checkpoint_smoke_test(
   logger: logging.Logger,
   graph_db: graph_tuple_database.Database,
@@ -285,151 +156,38 @@ def test_load_restore_model_from_checkpoint_smoke_test(
     f"mock{random.randint(0, int(1e6)):06}"
   )
 
-  # Create and initialize a model.
-  model = graph_lstm.GraphLstm(
-    logger,
-    graph_db,
-    ir_db=ir_db,
-    batch_size=32,
-    padded_sequence_length=10,
-    run_id=run_id,
-  )
+  model = graph_lstm.GraphLstm(logger, graph_db, ir_db=ir_db, run_id=run_id)
   model.Initialize()
 
-  # Create a checkpoint from the model.
   checkpoint_ref = model.SaveCheckpoint()
 
-  # Reset the model state to the checkpoint.
   model.RestoreFrom(checkpoint_ref)
 
-  # Run a test epoch to make sure the restored model works.
-  batch_iterator = batch_iterator_lib.MakeBatchIterator(
-    model=model,
-    graph_db=graph_db,
-    splits={epoch.Type.TRAIN: [0], epoch.Type.VAL: [1], epoch.Type.TEST: [2],},
-    epoch_type=epoch.Type.TEST,
-  )
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
-  model(
-    epoch_type=epoch.Type.TEST, batch_iterator=batch_iterator, logger=logger,
-=======
 
-  model = lstm.GraphLstm(
-    logger,
-    graph_y_db,
-    ir_db=ir_db,
-    batch_size=8,
-    padded_sequence_length=100,
-    run_id=run_id,
->>>>>>> ab87433e9... Can't sleep fixes.:deeplearning/ml4pl/models/lstm/lstm_test.py
-  )
-
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
-  # Create a new model instance and restore its state from the checkpoint.
-  new_model = graph_lstm.GraphLstm(
-    logger, graph_db, ir_db=ir_db, batch_size=32, padded_sequence_length=10,
-  )
-  new_model.RestoreFrom(checkpoint_ref)
-
-  # Check that the new model works.
-  batch_iterator = batch_iterator_lib.MakeBatchIterator(
-    model=new_model,
-    graph_db=graph_db,
-    splits={epoch.Type.TRAIN: [0], epoch.Type.VAL: [1], epoch.Type.TEST: [2],},
-    epoch_type=epoch.Type.TEST,
-  )
-  new_model(
-    epoch_type=epoch.Type.TEST, batch_iterator=batch_iterator, logger=logger,
-=======
-  batch_iterator = batch_iterator = batch_iterator_lib.MakeBatchIterator(
-=======
-  batch_iterator = batch_iterator_lib.MakeBatchIterator(
->>>>>>> a44eb165f... Work in progress on LSTM.:deeplearning/ml4pl/models/lstm/lstm_test.py
-    model=model,
-    graph_db=graph_y_db,
-    splits={epoch.Type.TRAIN: [0], epoch.Type.VAL: [1], epoch.Type.TEST: [2],},
-    epoch_type=epoch_type,
-  )
-
-  results = model(
-    epoch_type=epoch_type, batch_iterator=batch_iterator, logger=logger,
->>>>>>> 2953d2282... Add epoch type printout to batch iterator.:deeplearning/ml4pl/models/lstm/lstm_test.py
-  )
-
-
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
 def test_classifier_call(
-=======
-@test.Parametrize("nodes", ("statement", "identifier"))
-=======
-@test.Parametrize("nodes", list(x.name.lower() for x in lstm.NodeEncoder))
->>>>>>> 9117e0833... Work-in-progress on LSTM node classifier.:deeplearning/ml4pl/models/lstm/lstm_test.py
-=======
->>>>>>> a44eb165f... Work in progress on LSTM.:deeplearning/ml4pl/models/lstm/lstm_test.py
-def test_node_classifier_call(
->>>>>>> 10f007fcb... LSTM WIP.:deeplearning/ml4pl/models/lstm/lstm_test.py
   epoch_type: epoch.Type,
   logger: logging.Logger,
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
   graph_db: graph_tuple_database.Database,
-=======
-  node_y_db: graph_tuple_database.Database,
-  proto_db: unlabelled_graph_database.Database,
->>>>>>> 9117e0833... Work-in-progress on LSTM node classifier.:deeplearning/ml4pl/models/lstm/lstm_test.py
   ir_db: ir_database.Database,
 ):
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
   """Test running a graph classifier."""
-=======
-  """Test running a node classifier."""
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
-  FLAGS.nodes = flags_parsers.EnumFlag(
-    lstm.NodeEncoder, lstm.NodeEncoder[nodes.upper()]
-  )
-
->>>>>>> 10f007fcb... LSTM WIP.:deeplearning/ml4pl/models/lstm/lstm_test.py
-=======
->>>>>>> a44eb165f... Work in progress on LSTM.:deeplearning/ml4pl/models/lstm/lstm_test.py
   run_id = run_id_lib.RunId.GenerateUnique(
     f"mock{random.randint(0, int(1e6)):06}"
   )
 
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
   model = graph_lstm.GraphLstm(
-=======
-  model = lstm.GraphLstm(
->>>>>>> ab87433e9... Can't sleep fixes.:deeplearning/ml4pl/models/lstm/lstm_test.py
-=======
-  model = lstm.NodeLstm(
->>>>>>> 9117e0833... Work-in-progress on LSTM node classifier.:deeplearning/ml4pl/models/lstm/lstm_test.py
     logger,
     graph_db,
     ir_db=ir_db,
-    proto_db=proto_db,
     batch_size=8,
     padded_sequence_length=100,
-    padded_nodes_sequence_length=50,
     run_id=run_id,
   )
   model.Initialize()
 
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
-<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
   batch_iterator = batch_iterator_lib.MakeBatchIterator(
     model=model,
     graph_db=graph_db,
-=======
-  batch_iterator = batch_iterator = batch_iterator_lib.MakeBatchIterator(
-=======
-  batch_iterator = batch_iterator_lib.MakeBatchIterator(
->>>>>>> 1a7a6f70d... Use consistent test dataset enumerator names.:deeplearning/ml4pl/models/lstm/lstm_test.py
-    model=model,
-    graph_db=node_y_db,
->>>>>>> 2953d2282... Add epoch type printout to batch iterator.:deeplearning/ml4pl/models/lstm/lstm_test.py
     splits={epoch.Type.TRAIN: [0], epoch.Type.VAL: [1], epoch.Type.TEST: [2],},
     epoch_type=epoch_type,
   )

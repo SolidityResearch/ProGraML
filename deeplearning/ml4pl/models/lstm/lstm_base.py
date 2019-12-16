@@ -1,18 +1,3 @@
-# Copyright 2019 the ProGraML authors.
-#
-# Contact Chris Cummins <chrisc.101@gmail.com>.
-#
-# Licensed under the Apache License, Version 2.0 (the "License");
-# you may not use this file except in compliance with the License.
-# You may obtain a copy of the License at
-#
-#    http://www.apache.org/licenses/LICENSE-2.0
-#
-# Unless required by applicable law or agreed to in writing, software
-# distributed under the License is distributed on an "AS IS" BASIS,
-# WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
-# See the License for the specific language governing permissions and
-# limitations under the License.
 """This module defines the abstract base class for LSTM models."""
 import io
 import pathlib
@@ -67,31 +52,19 @@ class LstmBase(classifier_base.ClassifierBase):
     super(LstmBase, self).__init__(*args, **kwargs)
 
     self.batch_size = batch_size or FLAGS.batch_size
+    self.encoder = graph2seq_encoder or self.GetEncoder()
 
     # Determine the size of padded sequences. Use the requested
     # padded_sequence_length, or the maximum encoded length if it is shorter.
-    self.padded_sequence_length = (
-      padded_sequence_length or FLAGS.padded_sequence_length
-    )
-
-    self.encoder = graph2seq_encoder or self.GetEncoder()
-
-    # After instantiating the encoder, see if we can reduce the padded sequence
-    # length.
     self.padded_sequence_length = min(
-      self.padded_sequence_length, self.encoder.max_encoded_length
+      padded_sequence_length or FLAGS.padded_sequence_length,
+      self.encoder.max_encoded_length,
     )
 
     # Reset any previous Tensorflow session. This is required when running
     # consecutive LSTM models in the same process.
     tf.keras.backend.clear_session()
 
-    # Set by Initialize() and LoadModelData().
-    self.session = None
-    self.graph = None
-
-  def CreateModelData(self) -> None:
-    """Initialize an LSTM model. This """
     # Create the Tensorflow session and graph for the model.
     self.session = utils.SetAllowedGrowthOnKerasSession()
     self.graph = tf.compat.v1.get_default_graph()
@@ -102,26 +75,6 @@ class LstmBase(classifier_base.ClassifierBase):
       tf.compat.v1.keras.backend.set_session(self.session)
       self.model = self.CreateKerasModel()
 
-    self.FinalizeKerasModel()
-
-  def FinalizeKerasModel(self) -> None:
-    """Finalize a newly instantiated keras model.
-
-    To enable thread-safe use of the Keras model we must ensure that the
-    computation graph is fully instantiated from the master thread before the
-    first call to RunBatch(). Keras lazily instantiates parts of the graph
-    which we can force by performing the necessary ops now:
-      * training ops: make sure those are created by running the training loop
-        on a small batch of data.
-      * save/restore ops: make sure those are created by running save_model()
-        and throwing away the generated file.
-
-    Once we have performed those actions, we can freeze the computation graph
-    to make explicit the fact that later operations are not permitted to modify
-    the graph.
-    """
-    with self.graph.as_default():
-      tf.compat.v1.keras.backend.set_session(self.session)
       # To enable thread-safe use of the Keras model we must ensure that
       # the computation graph is fully instantiated before the first call
       # to RunBatch(). Keras lazily instantiates parts of the graph (such as
@@ -205,8 +158,8 @@ class LstmBase(classifier_base.ClassifierBase):
         tf.compat.v1.keras.backend.set_session(self.session)
         self.model.save(path)
 
-        with open(path, "rb") as f:
-          model_data = f.read()
+      with open(path, "rb") as f:
+        model_data = f.read()
     return model_data
 
   def LoadModelData(self, data_to_load: Any) -> None:
@@ -217,19 +170,9 @@ class LstmBase(classifier_base.ClassifierBase):
       with open(path, "wb") as f:
         f.write(data_to_load)
 
-      # The default TF graph is finalized in Initialize(), so we must
-      # first reset the session and create a new graph.
-      if self.session:
-        self.session.close()
-      tf.compat.v1.reset_default_graph()
-      self.session = utils.SetAllowedGrowthOnKerasSession()
-      self.graph = tf.compat.v1.get_default_graph()
-
-      with self.graph.as_default():
-        tf.compat.v1.keras.backend.set_session(self.session)
-        self.model = tf.keras.models.load_model(path)
-
-    self.FinalizeKerasModel()
+    with self.graph.as_default():
+      tf.compat.v1.keras.backend.set_session(self.session)
+      self.model = tf.keras.models.load_model(path)
 
   def CreateKerasModel(self) -> tf.compat.v1.keras.Model:
     """Create the LSTM model."""
@@ -243,14 +186,8 @@ class LstmBase(classifier_base.ClassifierBase):
   ) -> batches.Results:
     """Run a batch of data through the model.
 
-    Args:
-      epoch_type: The type of the current epoch.
-      batch: A batch of graphs and model data. This requires that batch data has
-        'x' and 'y' properties that return lists of model inputs, a `targets`
-        property that returns a flattened list of targets, a `GetPredictions()`
-        method that recieves as input the data generated by model and returns
-        a flattened array of the same shape as `targets`.
-      ctx: A logging context.
+    This requires that batch data has 'x' and 'y' properties that return a list
+    of feature arrays and target arrays, respectively.
     """
     # We can only get the loss on training.
     loss = None
@@ -259,12 +196,23 @@ class LstmBase(classifier_base.ClassifierBase):
       tf.compat.v1.keras.backend.set_session(self.session)
 
       if epoch_type == epoch.Type.TRAIN:
-        loss, *_ = self.model.train_on_batch(batch.data.x, batch.data.y)
+        loss = self.model.train_on_batch(batch.data.x, batch.data.y)
+        loss = self.ReshapeLoss(loss)
 
       predictions = self.model.predict_on_batch(batch.data.x)
 
+    # TODO: Reshape the node-level predictions using node_indices so that
+    # we match the shape of the actual graphs, not just the nodes that
+    # we make predictions for.
+
     return batches.Results.Create(
-      targets=batch.data.targets,
-      predictions=batch.data.GetPredictions(predictions, ctx=ctx),
+      targets=self.ReshapeTargets(batch.data.y[0]),
+      predictions=self.ReshapeTargets(predictions),
       loss=loss,
     )
+
+  def ReshapeLoss(self, loss):
+    return loss[0]
+
+  def ReshapeTargets(self, targets):
+    return targets
