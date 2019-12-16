@@ -53,6 +53,7 @@ FLAGS.strict_graph_segmentation = True
 FLAGS.lang_model_hidden_size = 8
 FLAGS.heuristic_model_hidden_size = 4
 
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
 # No test coverage for hot code.
 MODULE_UNDER_TEST = None
 
@@ -61,6 +62,8 @@ MODULE_UNDER_TEST = None
 ###############################################################################
 
 
+=======
+>>>>>>> a44eb165f... Work in progress on LSTM.:deeplearning/ml4pl/models/lstm/lstm_test.py
 def CreateRandomString(min_length: int = 1, max_length: int = 1024) -> str:
   """Generate a random string."""
   return "".join(
@@ -135,6 +138,7 @@ def node_y_db(
     random_graph_tuple_database_generator.PopulateWithTestSet(
       db,
       len(opencl_relpaths),
+      node_x_dimensionality=2,
       node_y_dimensionality=node_y_dimensionality,
       graph_x_dimensionality=0,
       graph_y_dimensionality=0,
@@ -154,9 +158,10 @@ def graph_y_db(
   with testing_databases.DatabaseContext(
     graph_tuple_database.Database, request.param
   ) as db:
-    PopulateOpenClGraphs(
+    random_graph_tuple_database_generator.PopulateWithTestSet(
       db,
-      opencl_relpaths,
+      len(opencl_relpaths),
+      node_x_dimensionality=2,
       node_y_dimensionality=0,
       graph_x_dimensionality=2,
       graph_y_dimensionality=graph_y_dimensionality,
@@ -224,17 +229,9 @@ def proto_db(request, opencl_relpaths: List[str]) -> ir_database.Database:
   with testing_databases.DatabaseContext(
     unlabelled_graph_database.Database, request.param
   ) as db:
-    rows = []
-    # Create IRs using OpenCL relpaths.
-    for i, relpath in enumerate(opencl_relpaths):
-      proto = (
-        random_unlabelled_graph_database_generator.CreateRandomProgramGraph()
-      )
-      proto.ir_id = i + 1
-      rows.append(proto)
-
-    with db.Session(commit=True) as session:
-      session.add_all(rows)
+    random_unlabelled_graph_database_generator.PopulateDatabaseWithTestSet(
+      db, len(opencl_relpaths)
+    )
 
 >>>>>>> 9117e0833... Work-in-progress on LSTM node classifier.:deeplearning/ml4pl/models/lstm/lstm_test.py
     yield db
@@ -309,6 +306,7 @@ def test_load_restore_model_from_checkpoint_smoke_test(
   )
 
 <<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
   # Create a new model instance and restore its state from the checkpoint.
   new_model = graph_lstm.GraphLstm(
     logger, graph_db, ir_db=ir_db, batch_size=32, padded_sequence_length=10,
@@ -326,6 +324,9 @@ def test_load_restore_model_from_checkpoint_smoke_test(
     epoch_type=epoch.Type.TEST, batch_iterator=batch_iterator, logger=logger,
 =======
   batch_iterator = batch_iterator = batch_iterator_lib.MakeBatchIterator(
+=======
+  batch_iterator = batch_iterator_lib.MakeBatchIterator(
+>>>>>>> a44eb165f... Work in progress on LSTM.:deeplearning/ml4pl/models/lstm/lstm_test.py
     model=model,
     graph_db=graph_y_db,
     splits={epoch.Type.TRAIN: [0], epoch.Type.VAL: [1], epoch.Type.TEST: [2],},
@@ -340,12 +341,15 @@ def test_load_restore_model_from_checkpoint_smoke_test(
 
 <<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
 <<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
 def test_classifier_call(
 =======
 @test.Parametrize("nodes", ("statement", "identifier"))
 =======
 @test.Parametrize("nodes", list(x.name.lower() for x in lstm.NodeEncoder))
 >>>>>>> 9117e0833... Work-in-progress on LSTM node classifier.:deeplearning/ml4pl/models/lstm/lstm_test.py
+=======
+>>>>>>> a44eb165f... Work in progress on LSTM.:deeplearning/ml4pl/models/lstm/lstm_test.py
 def test_node_classifier_call(
 >>>>>>> 10f007fcb... LSTM WIP.:deeplearning/ml4pl/models/lstm/lstm_test.py
   epoch_type: epoch.Type,
@@ -357,17 +361,19 @@ def test_node_classifier_call(
   proto_db: unlabelled_graph_database.Database,
 >>>>>>> 9117e0833... Work-in-progress on LSTM node classifier.:deeplearning/ml4pl/models/lstm/lstm_test.py
   ir_db: ir_database.Database,
-  nodes: str,
 ):
 <<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
   """Test running a graph classifier."""
 =======
   """Test running a node classifier."""
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
   FLAGS.nodes = flags_parsers.EnumFlag(
     lstm.NodeEncoder, lstm.NodeEncoder[nodes.upper()]
   )
 
 >>>>>>> 10f007fcb... LSTM WIP.:deeplearning/ml4pl/models/lstm/lstm_test.py
+=======
+>>>>>>> a44eb165f... Work in progress on LSTM.:deeplearning/ml4pl/models/lstm/lstm_test.py
   run_id = run_id_lib.RunId.GenerateUnique(
     f"mock{random.randint(0, int(1e6)):06}"
   )
