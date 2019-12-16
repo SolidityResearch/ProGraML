@@ -49,6 +49,21 @@ def logger(log_db: log_database.Database) -> logging.Logger:
     yield logger
 
 
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/node_lstm_test.py
+=======
+@test.Fixture(scope="session", params=(0, 2), namer=lambda x: f"graph_x:{x}")
+def graph_x_dimensionality(request) -> int:
+  """A test fixture which enumerates graph feature dimensionalities."""
+  return request.param
+
+
+@test.Fixture(scope="session", params=(2, 104), namer=lambda x: f"graph_y:{x}")
+def graph_y_dimensionality(request) -> int:
+  """A test fixture which enumerates graph label dimensionalities."""
+  return request.param
+
+
+>>>>>>> f579dd90f... LSTM test fixes.:deeplearning/ml4pl/models/lstm/lstm_test.py
 @test.Fixture(scope="session", params=(2, 3), namer=lambda x: f"node_y:{x}")
 def node_y_dimensionality(request) -> int:
   """A test fixture which enumerates graph label dimensionalities."""
@@ -84,8 +99,19 @@ def proto_db(
   with testing_databases.DatabaseContext(
     unlabelled_graph_database.Database, request.param
   ) as db:
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/node_lstm_test.py
     random_unlabelled_graph_database_generator.PopulateDatabaseWithTestSet(
       db, len(opencl_relpaths)
+=======
+    random_graph_tuple_database_generator.PopulateWithTestSet(
+      db,
+      len(opencl_relpaths),
+      node_x_dimensionality=2,
+      node_y_dimensionality=node_y_dimensionality,
+      graph_x_dimensionality=0,
+      graph_y_dimensionality=0,
+      split_count=3,
+>>>>>>> f579dd90f... LSTM test fixes.:deeplearning/ml4pl/models/lstm/lstm_test.py
     )
 
     yield db
@@ -107,10 +133,63 @@ def graph_db(
       db,
       len(opencl_relpaths),
       node_x_dimensionality=2,
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/node_lstm_test.py
       node_y_dimensionality=node_y_dimensionality,
       graph_x_dimensionality=0,
       graph_y_dimensionality=0,
       split_count=3,
+=======
+      node_y_dimensionality=0,
+      graph_x_dimensionality=2,
+      graph_y_dimensionality=graph_y_dimensionality,
+      split_count=3,
+    )
+    yield db
+
+
+@test.Fixture(
+  scope="session",
+  params=testing_databases.GetDatabaseUrls(),
+  namer=testing_databases.DatabaseUrlNamer("ir_db"),
+)
+def ir_db(request, opencl_relpaths: List[str]) -> ir_database.Database:
+  """A test fixture which yields an IR database with 256 OpenCL entries."""
+  with testing_databases.DatabaseContext(
+    ir_database.Database, request.param
+  ) as db:
+    rows = []
+    # Create IRs using OpenCL relpaths.
+    for i, relpath in enumerate(opencl_relpaths):
+      ir = ir_database.IntermediateRepresentation.CreateFromText(
+        source="pact17_opencl_devmap",
+        relpath=relpath,
+        source_language=ir_database.SourceLanguage.OPENCL,
+        type=ir_database.IrType.LLVM_6_0,
+        cflags="",
+        text=CreateRandomString(),
+      )
+      ir.id = i + 1
+      rows.append(ir)
+
+    with db.Session(commit=True) as session:
+      session.add_all(rows)
+
+    yield db
+
+
+@test.Fixture(
+  scope="session",
+  params=testing_databases.GetDatabaseUrls(),
+  namer=testing_databases.DatabaseUrlNamer("proto_db"),
+)
+def proto_db(request, opencl_relpaths: List[str]) -> ir_database.Database:
+  """A test fixture which yields an IR database with 256 OpenCL entries."""
+  with testing_databases.DatabaseContext(
+    unlabelled_graph_database.Database, request.param
+  ) as db:
+    random_unlabelled_graph_database_generator.PopulateDatabaseWithTestSet(
+      db, len(opencl_relpaths)
+>>>>>>> f579dd90f... LSTM test fixes.:deeplearning/ml4pl/models/lstm/lstm_test.py
     )
     yield db
 
