@@ -128,13 +128,13 @@ def ir_db(opencl_relpaths: List[str]) -> ir_database.Database:
 def node_y_db(
   request, opencl_relpaths: List[str], node_y_dimensionality: int,
 ) -> graph_tuple_database.Database:
-  """A test fixture which yields a graph database with 256 OpenCL IR entries."""
+  """A test fixture which yields a graph database with 100 real graphs."""
   with testing_databases.DatabaseContext(
     graph_tuple_database.Database, request.param
   ) as db:
-    PopulateOpenClGraphs(
+    random_graph_tuple_database_generator.PopulateWithTestSet(
       db,
-      opencl_relpaths,
+      len(opencl_relpaths),
       node_y_dimensionality=node_y_dimensionality,
       graph_x_dimensionality=0,
       graph_y_dimensionality=0,
@@ -393,11 +393,15 @@ def test_node_classifier_call(
   model.Initialize()
 
 <<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
   batch_iterator = batch_iterator_lib.MakeBatchIterator(
     model=model,
     graph_db=graph_db,
 =======
   batch_iterator = batch_iterator = batch_iterator_lib.MakeBatchIterator(
+=======
+  batch_iterator = batch_iterator_lib.MakeBatchIterator(
+>>>>>>> 1a7a6f70d... Use consistent test dataset enumerator names.:deeplearning/ml4pl/models/lstm/lstm_test.py
     model=model,
     graph_db=node_y_db,
 >>>>>>> 2953d2282... Add epoch type printout to batch iterator.:deeplearning/ml4pl/models/lstm/lstm_test.py
