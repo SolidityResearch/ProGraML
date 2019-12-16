@@ -62,6 +62,7 @@ FLAGS.strict_graph_segmentation = True
 
 
 <<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
+<<<<<<< HEAD:deeplearning/ml4pl/models/lstm/graph_lstm_test.py
 =======
 def PopulateOpenClGraphs(
   db: graph_tuple_database.Database,
@@ -89,6 +90,8 @@ def PopulateOpenClGraphs(
 
 
 >>>>>>> e45053440... Work in progress on LSTM model.:deeplearning/ml4pl/models/lstm/lstm_test.py
+=======
+>>>>>>> a44eb165f... Work in progress on LSTM.:deeplearning/ml4pl/models/lstm/lstm_test.py
 def CreateRandomString(min_length: int = 1, max_length: int = 1024) -> str:
   """Generate a random string."""
   return "".join(
@@ -199,6 +202,7 @@ def node_y_db(
     random_graph_tuple_database_generator.PopulateWithTestSet(
       db,
       len(opencl_relpaths),
+      node_x_dimensionality=2,
       node_y_dimensionality=node_y_dimensionality,
       graph_x_dimensionality=0,
       graph_y_dimensionality=0,
@@ -218,9 +222,10 @@ def graph_y_db(
   with testing_databases.DatabaseContext(
     graph_tuple_database.Database, request.param
   ) as db:
-    PopulateOpenClGraphs(
+    random_graph_tuple_database_generator.PopulateWithTestSet(
       db,
-      opencl_relpaths,
+      len(opencl_relpaths),
+      node_x_dimensionality=2,
       node_y_dimensionality=0,
       graph_x_dimensionality=2,
       graph_y_dimensionality=graph_y_dimensionality,
@@ -293,17 +298,9 @@ def proto_db(request, opencl_relpaths: List[str]) -> ir_database.Database:
   with testing_databases.DatabaseContext(
     unlabelled_graph_database.Database, request.param
   ) as db:
-    rows = []
-    # Create IRs using OpenCL relpaths.
-    for i, relpath in enumerate(opencl_relpaths):
-      proto = (
-        random_unlabelled_graph_database_generator.CreateRandomProgramGraph()
-      )
-      proto.ir_id = i + 1
-      rows.append(proto)
-
-    with db.Session(commit=True) as session:
-      session.add_all(rows)
+    random_unlabelled_graph_database_generator.PopulateDatabaseWithTestSet(
+      db, len(opencl_relpaths)
+    )
 
 >>>>>>> 9117e0833... Work-in-progress on LSTM node classifier.:deeplearning/ml4pl/models/lstm/lstm_test.py
     yield db
@@ -405,7 +402,7 @@ def test_graph_classifier_call(
 >>>>>>> e45053440... Work in progress on LSTM model.:deeplearning/ml4pl/models/lstm/lstm_test.py
   model.Initialize()
 
-  batch_iterator = batch_iterator = batch_iterator_lib.MakeBatchIterator(
+  batch_iterator = batch_iterator_lib.MakeBatchIterator(
     model=model,
     graph_db=graph_y_db,
     splits={epoch.Type.TRAIN: [0], epoch.Type.VAL: [1], epoch.Type.TEST: [2],},
@@ -464,20 +461,14 @@ def test_classifier_call(
     assert not results.has_loss
 
 
-@test.Parametrize("nodes", list(x.name.lower() for x in lstm.NodeEncoder))
 def test_node_classifier_call(
   epoch_type: epoch.Type,
   logger: logging.Logger,
   node_y_db: graph_tuple_database.Database,
   proto_db: unlabelled_graph_database.Database,
   ir_db: ir_database.Database,
-  nodes: str,
 ):
   """Test running a node classifier."""
-  FLAGS.nodes = flags_parsers.EnumFlag(
-    lstm.NodeEncoder, lstm.NodeEncoder[nodes.upper()]
-  )
-
   run_id = run_id_lib.RunId.GenerateUnique(
     f"mock{random.randint(0, int(1e6)):06}"
   )
