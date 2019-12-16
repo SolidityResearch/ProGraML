@@ -10,13 +10,13 @@ namespace ml4pl {
 
 class GraphEncoder {
  public:
-  GraphEncoder(const CachedStringEncoder& string_encoder)
+  GraphEncoder(CachedStringEncoder& string_encoder)
       : string_encoder_(string_encoder) {}
 
   ProgramGraphSeq Encode(const ProgramGraph& graph);
 
  private:
-  const CachedStringEncoder string_encoder_;
+  CachedStringEncoder string_encoder_;
 };
 
 }  // namespace ml4pl
