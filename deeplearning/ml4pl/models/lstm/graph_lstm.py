@@ -57,12 +57,17 @@ class GraphLstmBatch(NamedTuple):
 
   # Shape (batch_size, padded_sequence_length, 1), dtype np.int32
   encoded_sequences: np.array
+<<<<<<< HEAD
   # Shape (batch_size, graph_x_dimensionality), dtype np.int64
+=======
+  # Shape (batch_size, graph_x_dimensionality), dtype np.int32
+>>>>>>> 33703e4de... Split the LSTM into multiple modules.
   graph_x: np.array
   # Shape (batch_size, graph_y_dimensionality), dtype np.float32
   graph_y: np.array
 
   @property
+<<<<<<< HEAD
   def targets(self) -> np.array:
     """Return the targets for predictions.
     Shape (batch_size, graph_y_dimensionality)."""
@@ -87,6 +92,15 @@ class GraphLstmBatch(NamedTuple):
     del ctx  # Unused.
     return model_output[0]
 
+=======
+  def x(self):
+    return [self.encoded_sequences, self.graph_x]
+
+  @property
+  def y(self):
+    return [self.graph_y, self.graph_y]
+
+>>>>>>> 33703e4de... Split the LSTM into multiple modules.
 
 class GraphLstm(lstm_base.LstmBase):
   """LSTM Model.
@@ -117,7 +131,11 @@ class GraphLstm(lstm_base.LstmBase):
     )
     graph_x_input = tf.compat.v1.keras.layers.Input(
       shape=(self.graph_db.graph_x_dimensionality,),
+<<<<<<< HEAD
       dtype="float32",
+=======
+      dtype="flaot32",
+>>>>>>> 33703e4de... Split the LSTM into multiple modules.
       name="graph_x",
     )
 
@@ -200,7 +218,11 @@ class GraphLstm(lstm_base.LstmBase):
 
     graphs = self.GetBatchOfGraphs(graph_iterator)
     if not graphs:
+<<<<<<< HEAD
       return batches.EndOfBatches()
+=======
+      return batches.Data(graph_ids=[], data=None)
+>>>>>>> 33703e4de... Split the LSTM into multiple modules.
 
     # Encode the graphs in the batch.
     encoded_sequences: List[np.array] = self.encoder.Encode(graphs, ctx=ctx)
@@ -228,3 +250,9 @@ class GraphLstm(lstm_base.LstmBase):
         graph_y=np.vstack(graph_y),
       ),
     )
+<<<<<<< HEAD
+=======
+
+  def ReshapeLoss(self, loss):
+    return loss[0]
+>>>>>>> 33703e4de... Split the LSTM into multiple modules.
